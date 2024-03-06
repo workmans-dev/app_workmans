@@ -6,8 +6,6 @@ class Sandbox:public APP_WMS::Application {
 		~Sandbox() {};
 };
 
-int main() {
-	Sandbox* sandbox = new Sandbox();
-	sandbox->run();
-	delete sandbox;
-} 
+APP_WMS::Application* APP_WMS::createApplication() {
+	return new Sandbox();
+}
