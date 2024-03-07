@@ -1,15 +1,17 @@
 #pragma once
 #include "core.h"
+#include "stdio.h"
 
-namespace APP_WMS {
+namespace AppWMs {
 
-	class APP_WMS_API Application{
-		public:
-			Application();
-			virtual ~Application();
-			void run();
+	class APP_WMS_API App
+	{
+	public:
+		App();
+		~App();
+		void run();
 	};
-
-	Application* createApplication();
+	// client
+	App* createApplication();
 
 }

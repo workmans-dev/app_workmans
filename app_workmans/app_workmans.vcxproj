@@ -22,10 +22,10 @@
     <ClInclude Include="src\app_workmans.h" />
     <ClInclude Include="src\app_workmans\application.h" />
     <ClInclude Include="src\app_workmans\core.h" />
+    <ClInclude Include="src\app_workmans\entry_point.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\app_workmans\application.cpp" />
-    <ClCompile Include="src\app_workmans\entry_point.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -121,7 +121,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,7 +139,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -1,9 +1,12 @@
 #include "application.h"
 
-namespace APP_WMS {
-	Application::Application() {}
-	Application::~Application() {}
-	void Application::run() {
+namespace AppWMs {
+
+	App::App() {
+	}
+	App::~App() {
+	}
+	void App::run() {
 		while (true);
 	}
 

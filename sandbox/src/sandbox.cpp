@@ -1,11 +1,14 @@
 #include <app_workmans.h>
 
-class Sandbox:public APP_WMS::Application {
-	public:
-		Sandbox() {};
-		~Sandbox() {};
+class Sandbox : public AppWMs::App
+{
+public:
+	Sandbox() {
+	}
+	~Sandbox() {
+	}
 };
 
-APP_WMS::Application* APP_WMS::createApplication() {
+AppWMs::App* AppWMs::createApplication(){
 	return new Sandbox();
 }
