@@ -1,36 +1,31 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="app_workmans">
+      <UniqueIdentifier>{F7F20981-E355-9925-8CDB-D1DB781D65A8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\app_workmans\core.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="src\app_workmans.h" />
     <ClInclude Include="src\app_workmans\application.h">
-      <Filter>Header Files</Filter>
+      <Filter>app_workmans</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\app_workmans\core.h">
+      <Filter>app_workmans</Filter>
     </ClInclude>
     <ClInclude Include="src\app_workmans\entry_point.h">
-      <Filter>Header Files</Filter>
+      <Filter>app_workmans</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_workmans\log.h">
+      <Filter>app_workmans</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\app_workmans\application.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>app_workmans</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app_workmans\log.cpp">
+      <Filter>app_workmans</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
