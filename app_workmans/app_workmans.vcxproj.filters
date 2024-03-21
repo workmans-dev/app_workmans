@@ -4,6 +4,9 @@
     <Filter Include="app_workmans">
       <UniqueIdentifier>{F7F20981-E355-9925-8CDB-D1DB781D65A8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="app_workmans\events">
+      <UniqueIdentifier>{A8A1B0AB-9485-7101-FDE5-6B54E9E85B83}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app_workmans.h" />
@@ -16,8 +19,20 @@
     <ClInclude Include="src\app_workmans\entry_point.h">
       <Filter>app_workmans</Filter>
     </ClInclude>
+    <ClInclude Include="src\app_workmans\events\event.h">
+      <Filter>app_workmans\events</Filter>
+    </ClInclude>
     <ClInclude Include="src\app_workmans\log.h">
       <Filter>app_workmans</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_workmans\events\applicationEvent.h">
+      <Filter>app_workmans\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_workmans\events\mouseEvent.h">
+      <Filter>app_workmans\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app_workmans\events\keyEvent.h">
+      <Filter>app_workmans\events</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
