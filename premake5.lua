@@ -30,7 +30,8 @@ project "app_workmans"
 		"_WINDLL"
 	}
 	postbuildcommands{
-		("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/sandbox")
+		"{MKDIR} ../bin/" .. outputdir .. "/sandbox", 
+		"{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/sandbox"
 	}
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
