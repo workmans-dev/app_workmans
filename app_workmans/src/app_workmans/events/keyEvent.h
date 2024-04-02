@@ -4,7 +4,7 @@
 namespace AppWMs {
 	class APP_WMS_API KeyEvent:public Event {
 	public:
-		inline int GetKeyCode() const { return m_KeyCode; }
+		inline int getKeyCode() const { return m_KeyCode; }
 		EVENT_CLASS_CATEGORY(EventCatergoryKeyboard | EventCatergoryInput)
 	protected:
 		KeyEvent(int keycode) :m_KeyCode(keycode){}
