@@ -47,6 +47,7 @@ namespace AppWMs {
 	public:
 		// m_event(event) is a Event object , type : <EventType> //
 		EventDispatcher(Event& event):m_event(event){}
+
 		template <typename T>
 		bool Dispatch(EventFn<T> func) {
 			if (m_event.getEventType()==T::getStaticType()) {

@@ -152,6 +152,8 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
     <ClInclude Include="src\app_workmans.h" />
     <ClInclude Include="src\app_workmans\application.h" />
     <ClInclude Include="src\app_workmans\core.h" />
+    <ClInclude Include="src\app_workmans\core\keyCode.h" />
+    <ClInclude Include="src\app_workmans\core\platformDetection.h" />
     <ClInclude Include="src\app_workmans\entry_point.h" />
     <ClInclude Include="src\app_workmans\events\applicationEvent.h" />
     <ClInclude Include="src\app_workmans\events\event.h" />
