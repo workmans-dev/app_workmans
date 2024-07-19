@@ -1,7 +1,6 @@
 #pragma once
 #include "event.h"
 
-#include <sstream>
 
 namespace AppWMs {
 	class APP_WMS_API WindowResizeEvent : public Event {
@@ -23,7 +22,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMs_API WindowCloseEvent : public Event {
+	class APP_WMS_API WindowCloseEvent : public Event {
 	public:
 		WindowCloseEvent(){}
 		EVENT_CLASS_TYPE(WindowClose)
@@ -31,7 +30,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMs_API AppTick : public Event {
+	class APP_WMS_API AppTick : public Event {
 	public:
 		AppTick() {}
 		EVENT_CLASS_TYPE(AppTick)
@@ -39,7 +38,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMs_API AppUpdate : public Event {
+	class APP_WMS_API AppUpdate : public Event {
 	public:
 		AppUpdate() {}
 		EVENT_CLASS_TYPE(AppUpdate)
@@ -47,7 +46,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMs_API AppRender : public Event {
+	class APP_WMS_API AppRender : public Event {
 	public:
 		AppRender() {}
 		EVENT_CLASS_TYPE(AppRender)
@@ -55,7 +54,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMs_API WindowMoved : public Event {
+	class APP_WMS_API WindowMoved : public Event {
 	public:
 		WindowMoved() {}
 		EVENT_CLASS_TYPE(WindowMoved)

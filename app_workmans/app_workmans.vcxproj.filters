@@ -1,48 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="app_workmans">
-      <UniqueIdentifier>{F7F20981-E355-9925-8CDB-D1DB781D65A8}</UniqueIdentifier>
+    <Filter Include="core">
+      <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="app_workmans\events">
-      <UniqueIdentifier>{1BD7C421-8738-A22F-10A6-E8E17C06D9EE}</UniqueIdentifier>
+    <Filter Include="events">
+      <UniqueIdentifier>{5A9D08FC-463F-33D2-2FFA-46261B3BBA22}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app_workmans.h" />
-    <ClInclude Include="src\app_workmans\application.h">
-      <Filter>app_workmans</Filter>
+    <ClInclude Include="src\application.h" />
+    <ClInclude Include="src\core.h" />
+    <ClInclude Include="src\core\keyCode.h">
+      <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans\core.h">
-      <Filter>app_workmans</Filter>
+    <ClInclude Include="src\core\platformDetection.h">
+      <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans\entry_point.h">
-      <Filter>app_workmans</Filter>
+    <ClInclude Include="src\entry_point.h" />
+    <ClInclude Include="src\events\applicationEvent.h">
+      <Filter>events</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans\events\applicationEvent.h">
-      <Filter>app_workmans\events</Filter>
+    <ClInclude Include="src\events\event.h">
+      <Filter>events</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans\events\event.h">
-      <Filter>app_workmans\events</Filter>
+    <ClInclude Include="src\events\keyEvent.h">
+      <Filter>events</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans\events\keyEvent.h">
-      <Filter>app_workmans\events</Filter>
+    <ClInclude Include="src\events\mouseEvent.h">
+      <Filter>events</Filter>
     </ClInclude>
-    <ClInclude Include="src\app_workmans\events\mouseEvent.h">
-      <Filter>app_workmans\events</Filter>
-    </ClInclude>
-    <ClInclude Include="src\app_workmans\log.h">
-      <Filter>app_workmans</Filter>
-    </ClInclude>
-    <ClInclude Include="src\app_workmans\core\keyCode.h" />
-    <ClInclude Include="src\app_workmans\core\platformDetection.h" />
+    <ClInclude Include="src\log.h" />
+    <ClInclude Include="src\pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\app_workmans\application.cpp">
-      <Filter>app_workmans</Filter>
-    </ClCompile>
-    <ClCompile Include="src\app_workmans\log.cpp">
-      <Filter>app_workmans</Filter>
-    </ClCompile>
+    <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\log.cpp" />
+    <ClCompile Include="src\pch.cpp" />
   </ItemGroup>
 </Project>

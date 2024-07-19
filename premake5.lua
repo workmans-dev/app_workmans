@@ -11,13 +11,16 @@ project "app_workmans"
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 
+	pchheader "pch.h"
+	pchsource "%{prj.name}/src/pch.cpp"
+
 	files{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp"
 	}
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
-		"%{prj.name}/src/app_workmans"
+		"%{prj.name}/src"
 	}
 	filter "system:windows"
 	cppdialect "C++20"

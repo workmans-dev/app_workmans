@@ -1,8 +1,6 @@
 #pragma once
 #include "core.h"
-
-#include <string>
-#include <functional>
+#include "pch.h"
 
 namespace AppWMs {
 	enum class EventType {
@@ -35,7 +33,8 @@ namespace AppWMs {
 		virtual const char* getName() const = 0;
 		virtual int getCategoryFlags() const = 0;
 		virtual std::string toString() const { return getName(); }
-		inline bool isInCategory(EventCategory category) {return getCategoryFlags() & category;}
+		bool isInCategory(EventCategory category) {return getCategoryFlags() & category;}
+
 	protected:
 		bool pm_handled = false;
 	};

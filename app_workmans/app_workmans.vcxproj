@@ -76,10 +76,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;APP_WMS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendor\spdlog\include;src\app_workmans;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor\spdlog\include;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -98,10 +99,11 @@ IF EXIST ..\bin\Debug-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;APP_WMS_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendor\spdlog\include;src\app_workmans;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor\spdlog\include;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -124,10 +126,11 @@ IF EXIST ..\bin\Release-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q 
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;APP_WMS_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendor\spdlog\include;src\app_workmans;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor\spdlog\include;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -150,20 +153,24 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\app_workmans.h" />
-    <ClInclude Include="src\app_workmans\application.h" />
-    <ClInclude Include="src\app_workmans\core.h" />
-    <ClInclude Include="src\app_workmans\core\keyCode.h" />
-    <ClInclude Include="src\app_workmans\core\platformDetection.h" />
-    <ClInclude Include="src\app_workmans\entry_point.h" />
-    <ClInclude Include="src\app_workmans\events\applicationEvent.h" />
-    <ClInclude Include="src\app_workmans\events\event.h" />
-    <ClInclude Include="src\app_workmans\events\keyEvent.h" />
-    <ClInclude Include="src\app_workmans\events\mouseEvent.h" />
-    <ClInclude Include="src\app_workmans\log.h" />
+    <ClInclude Include="src\application.h" />
+    <ClInclude Include="src\core.h" />
+    <ClInclude Include="src\core\keyCode.h" />
+    <ClInclude Include="src\core\platformDetection.h" />
+    <ClInclude Include="src\entry_point.h" />
+    <ClInclude Include="src\events\applicationEvent.h" />
+    <ClInclude Include="src\events\event.h" />
+    <ClInclude Include="src\events\keyEvent.h" />
+    <ClInclude Include="src\events\mouseEvent.h" />
+    <ClInclude Include="src\log.h" />
+    <ClInclude Include="src\pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\app_workmans\application.cpp" />
-    <ClCompile Include="src\app_workmans\log.cpp" />
+    <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\log.cpp" />
+    <ClCompile Include="src\pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
