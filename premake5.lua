@@ -4,6 +4,11 @@ workspace "app_workmans"
 
 outputdir ="%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+-- statc lib 
+includeDir = {}
+includeDir["GLFW"] = "app_workmans/vendor/GLFW/include"
+include "app_workmans/vendor/GLFW"
+
 project "app_workmans"
 	location "app_workmans"
 	kind "SharedLib"
@@ -20,7 +25,13 @@ project "app_workmans"
 	}
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
-		"%{prj.name}/src"
+		"%{prj.name}/src",
+		"%{includeDir.GLFW}"
+	}
+	-- static lib link
+	links{
+		"GLFW",
+		"opengl32.lib"
 	}
 	filter "system:windows"
 	cppdialect "C++20"

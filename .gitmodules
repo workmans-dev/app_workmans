@@ -1,3 +1,6 @@
 [submodule "app_workmans/vendor/spdlog"]
 	path = app_workmans/vendor/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "app_workmans/vendor/GLFW"]
+	path = app_workmans/vendor/GLFW
+	url = https://github.com/glfw/glfw.git
