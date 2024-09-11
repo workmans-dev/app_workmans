@@ -1,6 +1,6 @@
 #pragma once
-#include "core.h"
 #include "pch.h"
+#include "core.h"
 
 namespace AppWMs {
 	enum class EventType {

@@ -1,8 +1,8 @@
 #pragma once
-#include <sstream>
 #include <algorithm>
 #include <iostream>
 #include <ostream>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>

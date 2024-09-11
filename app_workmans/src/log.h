@@ -2,6 +2,12 @@
 
 #include "core.h"
 #include "spdlog/spdlog.h"
+// this is really important header file to be able to execute a function which it is coming from pointer
+// see here 
+// application.cpp ----- 
+//
+// APP_WMS_CLI_TRACE <---- entry point
+#include "spdlog/fmt/ostr.h"
 
 namespace AppWMs {
 	class APP_WMS_API Log {

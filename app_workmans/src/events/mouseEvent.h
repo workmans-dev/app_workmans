@@ -1,5 +1,5 @@
 #pragma once
-#include "event.h"
+#include "events/event.h"
 
 namespace AppWMs {
 	class APP_WMS_API MouseMovedEvent :public Event {
