@@ -83,7 +83,6 @@
       <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -110,7 +109,6 @@ IF EXIST ..\bin\Debug-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -138,7 +136,6 @@ IF EXIST ..\bin\Release-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q 
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -167,6 +164,8 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
     <ClInclude Include="src\events\mouseEvent.h" />
     <ClInclude Include="src\log.h" />
     <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\win_window.h" />
+    <ClInclude Include="src\window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
@@ -174,6 +173,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\win_window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">

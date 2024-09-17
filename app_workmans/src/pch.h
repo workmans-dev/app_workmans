@@ -11,6 +11,8 @@
 #include <memory>
 #include <utility>
 
+#include "log.h"
+
 #ifdef APP_WMS_PLATFORM_WINDOWS
 #include <Windows.h>
 #endif

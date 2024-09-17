@@ -3,25 +3,28 @@
 #include "application.h"
 
 #include "events/applicationEvent.h"
-#include "log.h"
 
 
 namespace AppWMs {
-
+#define BIND_EVENT_FN(x) std::bind(&App::x, this, std::placeholders::_1)
 	App::App() {
-		std::cout << "App created" << std::endl;
+		pm_GLFWwindow_ptr = std::unique_ptr<Window>(Window::create());
+		// set event call back
+		pm_GLFWwindow_ptr->setEventCallBack(BIND_EVENT_FN(onEvent));
 	}
+
 	App::~App() {
 	}
-	void App::run() {
-		WindowResizeEvent e(1280, 720);
-		if (e.isInCategory(EventCatergoryApplication)) {
-			APP_WMS_CLI_TRACE(e);
-		}
-		if (e.isInCategory(EventCatergoryInput)) {
-			APP_WMS_CLI_TRACE(e);
-		}
-		while (true);
+
+	void App::onEvent(Event& e) {
+		APP_WMS_CORE_INFO("{0}", e)
 	}
+
+	void App::run() {
+		while (pm_running) {
+			pm_GLFWwindow_ptr->onUpdate();
+		}
+	}
+
 
 }

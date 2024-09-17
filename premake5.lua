@@ -15,6 +15,7 @@ project "app_workmans"
 	language "C++"
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
+	
 
 	pchheader "pch.h"
 	pchsource "%{prj.name}/src/pch.cpp"
@@ -35,7 +36,6 @@ project "app_workmans"
 	}
 	filter "system:windows"
 	cppdialect "C++20"
-	staticruntime "On"
 	systemversion "latest"
 
 	defines{
@@ -50,11 +50,11 @@ project "app_workmans"
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
 		symbols "On"
-		
+
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
 		optimize "On"
-		
+
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
 		optimize "On"
@@ -94,6 +94,7 @@ project "sandbox"
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
 		symbols "On"
+
 		
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"

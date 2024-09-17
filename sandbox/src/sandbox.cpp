@@ -4,7 +4,6 @@ class Sandbox : public AppWMs::App
 {
 public:
 	Sandbox() {
-		std::cout << "SandBox created" << std::endl;
 	}
 	~Sandbox() {
 	}

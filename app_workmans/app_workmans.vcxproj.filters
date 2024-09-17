@@ -33,10 +33,13 @@
     </ClInclude>
     <ClInclude Include="src\log.h" />
     <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\win_window.h" />
+    <ClInclude Include="src\window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\pch.cpp" />
+    <ClCompile Include="src\win_window.cpp" />
   </ItemGroup>
 </Project>

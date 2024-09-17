@@ -1,0 +1,33 @@
+#pragma once
+#include "pch.h"
+#include "core.h"
+#include "events/event.h"
+
+namespace AppWMs {
+
+	struct WindowProps 
+	{
+		std::string title;
+		unsigned int w, h;
+		WindowProps(const std::string & title_in="APP_WORKMANs", 
+			unsigned int width_in = 1280, unsigned int height_in = 720):w(width_in), h(height_in), title(title_in){}
+	};
+
+	class APP_WMS_API Window
+	{
+	public:
+		using EventCallBackFn = std::function<void(Event&)>;
+		virtual ~Window() {
+		}
+		virtual void onUpdate() = 0;
+		virtual unsigned int getWidth() const = 0;
+		virtual unsigned int getHeight() const = 0;
+
+		virtual void setEventCallBack(const EventCallBackFn& callback) = 0;
+		virtual void setVSync(bool enabled) = 0;
+		virtual bool isVSync() const = 0;
+
+		static Window* create(const WindowProps& Win_props = WindowProps());
+
+	};
+}
