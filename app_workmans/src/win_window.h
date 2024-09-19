@@ -5,7 +5,8 @@
 namespace AppWMs {
 	class Win_Window :public Window {
 	private:
-		struct WindowData {
+		struct WindowData 
+		{
 			std::string title;
 			unsigned int w, h;
 			bool VSync;
