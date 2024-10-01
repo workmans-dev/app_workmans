@@ -14,7 +14,7 @@ namespace AppWMs {
 			}
 			//// ----- to declare which event is ocurring.
 			EVENT_CLASS_TYPE(MouseMoved);
-			EVENT_CLASS_CATEGORY(EventCatergoryInput | EventCatergoryMouse);
+			EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryMouse);
 			//// ----- end
 		private:
 			float m_xPnt, m_yPnt;
@@ -32,7 +32,7 @@ namespace AppWMs {
 			}
 			//// ----- to declare which event is ocurring.
 			EVENT_CLASS_TYPE(MouseScrolled);
-			EVENT_CLASS_CATEGORY(EventCatergoryInput | EventCatergoryMouse);
+			EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryMouse);
 			//// ----- end
 		private:
 			float m_xScroll, m_yScroll;
@@ -42,36 +42,34 @@ namespace AppWMs {
 		public:
 			inline int get_mouseButton() const { return m_mouseBtn; }
 			//// ----- to declare which event is ocurring.
-			EVENT_CLASS_CATEGORY(EventCatergoryInput | EventCatergoryMouse);
+			EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryMouse);
 			//// ----- end
 		protected:
 			MouseButtonEvent(int mouseBtn) :m_mouseBtn(mouseBtn) {}
 			int m_mouseBtn;
 	};
 
-	class APP_WMS_API MousePressedEvent:public MouseButtonEvent {
+	class APP_WMS_API MousePressedEvent:public MouseButtonEvent
+	{
 	public:
 		MousePressedEvent(int btn) :MouseButtonEvent(btn){}
 		std::string toString() const override {
 			std::stringstream ss;
-			ss << "mouse pressed : " << m_btn;
+			ss << "mouse pressed : " << m_mouseBtn;
 			return ss.str();
 		}
 		EVENT_CLASS_TYPE(MouseButtonPressed);
-	private:
-		int m_btn;
 	};
 
-	class APP_WMS_API MouseReleasedEvent :public MouseButtonEvent {
+	class APP_WMS_API MouseReleasedEvent :public MouseButtonEvent 
+	{
 	public:
 		MouseReleasedEvent(int btn) :MouseButtonEvent(btn) {}
 		std::string toString() const override {
 			std::stringstream ss;
-			ss << "mouse released : " << m_btn;
+			ss << "mouse released : " << m_mouseBtn;
 			return ss.str();
 		}
 		EVENT_CLASS_TYPE(MouseButtonReleased);
-	private:
-		int m_btn;
 	};
 }

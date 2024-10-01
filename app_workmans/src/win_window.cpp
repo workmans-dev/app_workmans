@@ -4,6 +4,8 @@
 #include "events/applicationEvent.h"
 #include "events/keyEvent.h"
 #include "events/mouseEvent.h"
+#include <glad/glad.h>
+
 
 namespace AppWMs {
 
@@ -49,11 +51,9 @@ namespace AppWMs {
 		glfwSetWindowSizeCallback(pm_GLFWwindow_ptr,
 			[](GLFWwindow* window, int width, int height) 
 			{
-				// set construction of the WindowData from Win_Window
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				data.w = width;
 				data.h = height;
-				// create WindowResizeEvent from applicationEvent.h
 				WindowResizeEvent event(width, height);
 				data.EventCallBack(event);
 			});
@@ -88,7 +88,7 @@ namespace AppWMs {
 				}
 			});
 		glfwSetMouseButtonCallback(pm_GLFWwindow_ptr,
-			[](GLFWwindow * window, int button, int action, int mods) 
+			[](GLFWwindow* window, int button, int action, int mods) 
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				switch (action) {

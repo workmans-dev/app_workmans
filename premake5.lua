@@ -7,7 +7,14 @@ outputdir ="%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- statc lib 
 includeDir = {}
 includeDir["GLFW"] = "app_workmans/vendor/GLFW/include"
+includeDir["Glad"] = "app_workmans/vendor/Glad/include"
+includeDir["ImGui"] = "app_workmans/vendor/imgui"
+
+
 include "app_workmans/vendor/GLFW"
+include "app_workmans/vendor/Glad"
+include "app_workmans/vendor/imgui"
+
 
 project "app_workmans"
 	location "app_workmans"
@@ -27,11 +34,17 @@ project "app_workmans"
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
 		"%{prj.name}/src",
-		"%{includeDir.GLFW}"
+		"%{includeDir.GLFW}",
+		"%{includeDir.Glad}",
+		"%{includeDir.ImGui}"
+
+
 	}
 	-- static lib link
 	links{
 		"GLFW",
+		"Glad",
+		"ImGui",
 		"opengl32.lib"
 	}
 	filter "system:windows"
@@ -41,6 +54,7 @@ project "app_workmans"
 	defines{
 		"APP_WMS_PLATFORM_WINDOWS",
 		"APP_WMS_BUILD_DLL",
+		"GLFW_INCLUDE_NONE",
 		"_WINDLL"
 	}
 	postbuildcommands{
@@ -50,14 +64,17 @@ project "app_workmans"
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
 		symbols "On"
+		buildoptions "/MDd"
 
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
 		optimize "On"
+		buildoptions "/MD"
 
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
 		optimize "On"
+		buildoptions "/MD"
 
 
 
@@ -87,19 +104,21 @@ project "sandbox"
 
 	defines{
 		"APP_WMS_PLATFORM_WINDOWS",
-		"APP_WMS_BUILD_DLL",
-		"_WINDLL"
 	}
 
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
 		symbols "On"
+		buildoptions "/MDd"
 
 		
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
 		optimize "On"
+		buildoptions "/MD"
 		
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
 		optimize "On"
+		buildoptions "/MD"
+		

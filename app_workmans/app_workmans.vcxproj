@@ -79,10 +79,11 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;APP_WMS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_WINDLL;APP_WMS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <AdditionalOptions>/MDd %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -102,13 +103,14 @@ IF EXIST ..\bin\Debug-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;APP_WMS_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_WINDLL;APP_WMS_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
+      <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -129,13 +131,14 @@ IF EXIST ..\bin\Release-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q 
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;_WINDLL;APP_WMS_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_WINDLL;APP_WMS_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
+      <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -157,11 +160,15 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\core\keyCode.h" />
     <ClInclude Include="src\core\platformDetection.h" />
+    <ClInclude Include="src\debugs\imGuiRenderer.h" />
     <ClInclude Include="src\entry_point.h" />
     <ClInclude Include="src\events\applicationEvent.h" />
     <ClInclude Include="src\events\event.h" />
     <ClInclude Include="src\events\keyEvent.h" />
     <ClInclude Include="src\events\mouseEvent.h" />
+    <ClInclude Include="src\imGui\imGuiLayer.h" />
+    <ClInclude Include="src\layer.h" />
+    <ClInclude Include="src\layerStack.h" />
     <ClInclude Include="src\log.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\win_window.h" />
@@ -169,6 +176,10 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\debugs\imGuiRenderer.cpp" />
+    <ClCompile Include="src\imGui\imGuiLayer.cpp" />
+    <ClCompile Include="src\layer.cpp" />
+    <ClCompile Include="src\layerStack.cpp" />
     <ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -178,6 +189,12 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
   <ItemGroup>
     <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">
       <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\Glad\Glad.vcxproj">
+      <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\imgui\ImGui.vcxproj">
+      <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

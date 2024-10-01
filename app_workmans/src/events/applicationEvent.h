@@ -16,7 +16,7 @@ namespace AppWMs {
 		}
 
 		EVENT_CLASS_TYPE(WindowResize)
-		EVENT_CLASS_CATEGORY(EventCatergoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	private:
 		unsigned int pm_width, pm_height;
 
@@ -27,39 +27,39 @@ namespace AppWMs {
 	public:
 		WindowCloseEvent(){}
 		EVENT_CLASS_TYPE(WindowClose)
-		EVENT_CLASS_CATEGORY(EventCatergoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 
-	class APP_WMS_API AppTick : public Event {
+	class APP_WMS_API AppTickEvent : public Event {
 	public:
-		AppTick() {}
+		AppTickEvent() {}
 		EVENT_CLASS_TYPE(AppTick)
-		EVENT_CLASS_CATEGORY(EventCatergoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 
-	class APP_WMS_API AppUpdate : public Event {
+	class APP_WMS_API AppUpdateEvent : public Event {
 	public:
-		AppUpdate() {}
+		AppUpdateEvent() {}
 		EVENT_CLASS_TYPE(AppUpdate)
-		EVENT_CLASS_CATEGORY(EventCatergoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 
-	class APP_WMS_API AppRender : public Event {
+	class APP_WMS_API AppRenderEvent : public Event {
 	public:
-		AppRender() {}
+		AppRenderEvent() {}
 		EVENT_CLASS_TYPE(AppRender)
-		EVENT_CLASS_CATEGORY(EventCatergoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 
-	class APP_WMS_API WindowMoved : public Event {
+	class APP_WMS_API WindowMovedEvent : public Event {
 	public:
-		WindowMoved() {}
+		WindowMovedEvent() {}
 		EVENT_CLASS_TYPE(WindowMoved)
-		EVENT_CLASS_CATEGORY(EventCatergoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 }

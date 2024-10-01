@@ -13,30 +13,31 @@ namespace AppWMs {
 
 	enum EventCategory {
 		None = 0,
-		EventCatergoryApplication = BIT(0),
-		EventCatergoryInput = BIT(1),
-		EventCatergoryKeyboard = BIT(2),
-		EventCatergoryMouse = BIT(3),
-		EventCatergoryMouseButton = BIT(4)
+		EventCategoryApplication = BIT(0),
+		EventCategoryInput = BIT(1),
+		EventCategoryKeyboard = BIT(2),
+		EventCategoryMouse = BIT(3),
+		EventCategoryMouseButton = BIT(4)
 	};
 
-#define EVENT_CLASS_TYPE(type) static EventType getStaticType() {return EventType::##type;}\
-								virtual EventType getEventType() const override {return getStaticType();}\
-								virtual const char* getName() const override {return #type;}
+	#define EVENT_CLASS_TYPE(type) static EventType getStaticType() {return EventType::##type;}\
+									virtual EventType getEventType() const override {return getStaticType();}\
+									virtual const char* getName() const override {return #type;}
+	//// category is the EventCategory, return EventCategory::EventCategory
+	#define EVENT_CLASS_CATEGORY(category) virtual int getCategoryFlags() const override {return category;}
 
-//// category is some of enum members , type : <EventCategory> //
-#define EVENT_CLASS_CATEGORY(category) virtual int getCategoryFlags() const override {return category;}
+
 	class APP_WMS_API Event {
 		friend class EventDispatcher;
 	public:
+		virtual ~Event() = default;
+		bool p_handled = false;
+
 		virtual EventType getEventType() const = 0;
 		virtual const char* getName() const = 0;
 		virtual int getCategoryFlags() const = 0;
 		virtual std::string toString() const { return getName(); }
 		bool isInCategory(EventCategory category) {return getCategoryFlags() & category;}
-
-	protected:
-		bool pm_handled = false;
 	};
 
 
@@ -50,7 +51,7 @@ namespace AppWMs {
 		template <typename T>
 		bool Dispatch(EventFn<T> func) {
 			if (m_event.getEventType()==T::getStaticType()) {
-				m_event.pm_handled = func(*(T*)&m_event);
+				m_event.p_handled = func(*(T*)&m_event);
 				return true;
 			}
 			return false;
