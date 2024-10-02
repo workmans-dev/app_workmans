@@ -2,7 +2,7 @@
 #include "layer.h"
 
 namespace AppWMs {
-	class ImGuiLayer :public Layer {
+	class APP_WMS_API ImGuiLayer :public Layer {
 	public:
 		ImGuiLayer();
 		~ImGuiLayer();
@@ -10,5 +10,8 @@ namespace AppWMs {
 		virtual void onDetach();
 		virtual void onUpdate();
 		virtual void onEvent(Event& e);
+	private:
+		float m_time = 0.0f;
 	};
+
 }

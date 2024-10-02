@@ -79,7 +79,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_WINDLL;APP_WMS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_CRT_SECURE_NO_WARNINGS;_WINDLL;APP_WMS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
@@ -103,7 +103,7 @@ IF EXIST ..\bin\Debug-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_WINDLL;APP_WMS_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_CRT_SECURE_NO_WARNINGS;_WINDLL;APP_WMS_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -131,7 +131,7 @@ IF EXIST ..\bin\Release-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q 
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_WINDLL;APP_WMS_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>APP_WMS_PLATFORM_WINDOWS;APP_WMS_BUILD_DLL;GLFW_INCLUDE_NONE;_CRT_SECURE_NO_WARNINGS;_WINDLL;APP_WMS_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>vendor\spdlog\include;src;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -160,7 +160,8 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\core\keyCode.h" />
     <ClInclude Include="src\core\platformDetection.h" />
-    <ClInclude Include="src\debugs\imGuiRenderer.h" />
+    <ClInclude Include="src\debugs\ImGuiRenderer.h" />
+    <ClInclude Include="src\debugs\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="src\entry_point.h" />
     <ClInclude Include="src\events\applicationEvent.h" />
     <ClInclude Include="src\events\event.h" />
@@ -176,7 +177,7 @@ IF EXIST ..\bin\Dist-windows-x86_64\app_workmans\app_workmans.dll\ (xcopy /Q /E 
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
-    <ClCompile Include="src\debugs\imGuiRenderer.cpp" />
+    <ClCompile Include="src\debugs\ImGuiRenderer.cpp" />
     <ClCompile Include="src\imGui\imGuiLayer.cpp" />
     <ClCompile Include="src\layer.cpp" />
     <ClCompile Include="src\layerStack.cpp" />

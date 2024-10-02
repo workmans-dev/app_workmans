@@ -4,8 +4,14 @@
     <Filter Include="core">
       <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="debugs">
+      <UniqueIdentifier>{1F4B7EF8-0BED-A8CE-F4A7-BC22E0E82F1F}</UniqueIdentifier>
+    </Filter>
     <Filter Include="events">
       <UniqueIdentifier>{5A9D08FC-463F-33D2-2FFA-46261B3BBA22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imGui">
+      <UniqueIdentifier>{E00FA80F-4C24-D0C0-15A6-73208179CCF1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -17,6 +23,12 @@
     </ClInclude>
     <ClInclude Include="src\core\platformDetection.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugs\imGuiRenderer.h">
+      <Filter>debugs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugs\imgui_impl_opengl3_loader.h">
+      <Filter>debugs</Filter>
     </ClInclude>
     <ClInclude Include="src\entry_point.h" />
     <ClInclude Include="src\events\applicationEvent.h">
@@ -31,23 +43,28 @@
     <ClInclude Include="src\events\mouseEvent.h">
       <Filter>events</Filter>
     </ClInclude>
+    <ClInclude Include="src\imGui\imGuiLayer.h">
+      <Filter>imGui</Filter>
+    </ClInclude>
     <ClInclude Include="src\layer.h" />
     <ClInclude Include="src\layerStack.h" />
     <ClInclude Include="src\log.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\win_window.h" />
     <ClInclude Include="src\window.h" />
-    <ClInclude Include="src\imGui\imGuiLayer.h" />
-    <ClInclude Include="src\debugs\imGuiRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\debugs\imGuiRenderer.cpp">
+      <Filter>debugs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imGui\imGuiLayer.cpp">
+      <Filter>imGui</Filter>
+    </ClCompile>
     <ClCompile Include="src\layer.cpp" />
     <ClCompile Include="src\layerStack.cpp" />
     <ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\pch.cpp" />
     <ClCompile Include="src\win_window.cpp" />
-    <ClCompile Include="src\imGui\imGuiLayer.cpp" />
-    <ClCompile Include="src\debugs\imGuiRenderer.cpp" />
   </ItemGroup>
 </Project>

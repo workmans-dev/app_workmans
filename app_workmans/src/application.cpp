@@ -6,10 +6,15 @@
 
 namespace AppWMs {
 #define BIND_EVENT_FN(x) std::bind(&App::x, this, std::placeholders::_1)
+	App* App::m_Instance = nullptr;
+
 	App::App() {
+		APP_WMS_CORE_ASSERTS(!m_Instance, "Exits!!!")
+		m_Instance = this;
+		std::cout << "created App" << std::endl;
 		pm_GLFWwindow_ptr = std::unique_ptr<Window>(Window::create());
 		// set event call back
-		pm_GLFWwindow_ptr->setEventCallBack(BIND_EVENT_FN(onEvent));
+		pm_GLFWwindow_ptr->setData_EventCallBack(BIND_EVENT_FN(onEvent));
 
 	}
 
@@ -43,10 +48,12 @@ namespace AppWMs {
 
 	void App::pushLayer(Layer* layer) {
 		m_layerStack.pushLayer(layer);
+		layer->onAttach();
 	}
 
 	void App::pushOverlay(Layer* overlay) {
 		m_layerStack.pushOverlay(overlay);
+		overlay->onAttach();
 	}
 
 }

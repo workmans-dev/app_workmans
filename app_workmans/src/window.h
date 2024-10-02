@@ -22,7 +22,7 @@ namespace AppWMs {
 		virtual unsigned int getWidth() const = 0;
 		virtual unsigned int getHeight() const = 0;
 
-		virtual void setEventCallBack(const EventCallBackFn& callback) = 0;
+		virtual void setData_EventCallBack(const EventCallBackFn& callback) = 0;
 		virtual void setVSync(bool enabled) = 0;
 		virtual bool isVSync() const = 0;
 

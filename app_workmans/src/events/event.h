@@ -51,7 +51,7 @@ namespace AppWMs {
 		template <typename T>
 		bool Dispatch(EventFn<T> func) {
 			if (m_event.getEventType()==T::getStaticType()) {
-				m_event.p_handled = func(*(T*)&m_event);
+				m_event.p_handled = func(*(T*)& m_event);
 				return true;
 			}
 			return false;

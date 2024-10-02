@@ -23,7 +23,7 @@ namespace AppWMs {
 		void onUpdate() override;
 		inline unsigned int getWidth() const override {return pm_data.w;}
 		inline unsigned int getHeight() const override {return pm_data.h;}
-		inline void setEventCallBack(const EventCallBackFn& callback) override { pm_data.EventCallBack = callback; }
+		inline void setData_EventCallBack(const EventCallBackFn& callback) override { pm_data.EventCallBack = callback; }
 		void setVSync(bool enabled) override;
 		bool isVSync() const override;
 		

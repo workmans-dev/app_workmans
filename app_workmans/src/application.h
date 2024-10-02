@@ -16,14 +16,18 @@ namespace AppWMs {
 		~App();
 		void onEvent(Event& e);
 		void run();
-		bool onWindowClose(WindowCloseEvent& e);
 
 		void pushLayer(Layer* layer);
 		void pushOverlay(Layer* overlay);
+
+		inline Window& getWindow() { return *pm_GLFWwindow_ptr; }
+		inline static App& getApp() { return *m_Instance; }
 	private:
+		bool onWindowClose(WindowCloseEvent& e);
 		std::unique_ptr<Window> pm_GLFWwindow_ptr;
 		bool pm_running = true;
 		LayerStack m_layerStack;
+		static App* m_Instance;
 	};
 
 	// client

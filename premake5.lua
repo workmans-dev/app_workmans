@@ -55,7 +55,6 @@ project "app_workmans"
 		"APP_WMS_PLATFORM_WINDOWS",
 		"APP_WMS_BUILD_DLL",
 		"GLFW_INCLUDE_NONE",
-		"_WINDLL"
 	}
 	postbuildcommands{
 		"{MKDIR} ../bin/" .. outputdir .. "/sandbox", 

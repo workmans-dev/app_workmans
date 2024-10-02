@@ -37,15 +37,18 @@ namespace AppWMs {
 		{
 			int success = glfwInit();
 			APP_WMS_CORE_ASSERTS(success, "Could not initialze GLFW.");
-			s_glf_initialized = true;
 			glfwSetErrorCallback(GLFWErrorCallback);
+			s_glf_initialized = true;
 
 		}
 		pm_GLFWwindow_ptr = glfwCreateWindow((int)Win_props.w, 
 			(int)Win_props.h, Win_props.title.c_str(), 
 			nullptr, nullptr);
 		glfwMakeContextCurrent(pm_GLFWwindow_ptr);
+		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		APP_WMS_CORE_ASSERTS(status, "Failed init!!!!!!")
 		glfwSetWindowUserPointer(pm_GLFWwindow_ptr, &pm_data);
+		setVSync(true);
 
 		// set GLFW call back
 		glfwSetWindowSizeCallback(pm_GLFWwindow_ptr,
