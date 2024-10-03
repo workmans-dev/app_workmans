@@ -24,7 +24,7 @@
     <ClInclude Include="src\core\platformDetection.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="src\debugs\imGuiRenderer.h">
+    <ClInclude Include="src\debugs\ImGuiRenderer.h">
       <Filter>debugs</Filter>
     </ClInclude>
     <ClInclude Include="src\debugs\imgui_impl_opengl3_loader.h">
@@ -55,7 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
-    <ClCompile Include="src\debugs\imGuiRenderer.cpp">
+    <ClCompile Include="src\debugs\ImGuiRenderer.cpp">
       <Filter>debugs</Filter>
     </ClCompile>
     <ClCompile Include="src\imGui\imGuiLayer.cpp">

@@ -50,6 +50,7 @@ project "app_workmans"
 	filter "system:windows"
 	cppdialect "C++20"
 	systemversion "latest"
+	staticruntime "off"
 
 	defines{
 		"APP_WMS_PLATFORM_WINDOWS",
@@ -63,17 +64,17 @@ project "app_workmans"
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
 		symbols "On"
-		buildoptions "/MDd"
+		runtime "Debug"
 
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
 		optimize "On"
-		buildoptions "/MD"
+		runtime "Release"
 
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
 		optimize "On"
-		buildoptions "/MD"
+		runtime "Debug"
 
 
 
@@ -98,7 +99,7 @@ project "sandbox"
 
 	filter "system:windows"
 	cppdialect "C++20"
-	staticruntime "On"
+	staticruntime "off"
 	systemversion "latest"
 
 	defines{
@@ -108,16 +109,16 @@ project "sandbox"
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
 		symbols "On"
-		buildoptions "/MDd"
+		runtime "Debug"
 
 		
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
 		optimize "On"
-		buildoptions "/MD"
+		runtime "Release"
 		
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
 		optimize "On"
-		buildoptions "/MD"
+		runtime "Release"
 		

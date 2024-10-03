@@ -68,8 +68,7 @@ namespace AppWMs {
 				data.EventCallBack(event);
 			});
 		glfwSetKeyCallback(pm_GLFWwindow_ptr, 
-			[](GLFWwindow* window, int key, int scancode, 
-				int action, int mods) 
+			[](GLFWwindow* window, int key, int scancode, int action, int mods) 
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				switch (action) {
@@ -89,6 +88,13 @@ namespace AppWMs {
 						break;
 						}
 				}
+			});
+		glfwSetCharCallback(pm_GLFWwindow_ptr,
+			[](GLFWwindow* window, unsigned int key) 
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				KeyTypedEvent event(key);
+				data.EventCallBack(event);
 			});
 		glfwSetMouseButtonCallback(pm_GLFWwindow_ptr,
 			[](GLFWwindow* window, int button, int action, int mods) 
@@ -119,6 +125,8 @@ namespace AppWMs {
 				MouseMovedEvent event((float)xPos, (float)yPos);
 				data.EventCallBack(event);
 			});
+
+
 	}
 	void Win_Window::close() 
 	{

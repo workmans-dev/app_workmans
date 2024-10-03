@@ -5,16 +5,15 @@
 
 
 namespace AppWMs {
-#define BIND_EVENT_FN(x) std::bind(&App::x, this, std::placeholders::_1)
 	App* App::m_Instance = nullptr;
 
 	App::App() {
 		APP_WMS_CORE_ASSERTS(!m_Instance, "Exits!!!")
 		m_Instance = this;
 		std::cout << "created App" << std::endl;
-		pm_GLFWwindow_ptr = std::unique_ptr<Window>(Window::create());
+		pm_window_ptr = std::unique_ptr<Window>(Window::create());
 		// set event call back
-		pm_GLFWwindow_ptr->setData_EventCallBack(BIND_EVENT_FN(onEvent));
+		pm_window_ptr->setData_EventCallBack(BIND_EVENT_FN(App::onEvent));
 
 	}
 
@@ -23,7 +22,7 @@ namespace AppWMs {
 
 	void App::onEvent(Event& event) {
 		EventDispatcher dispatcher(event);
-		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(onWindowClose));
+		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(App::onWindowClose));
 		for (auto it = m_layerStack.end(); it != m_layerStack.begin();)
 		{
 			(*--it)->onEvent(event);
@@ -33,11 +32,15 @@ namespace AppWMs {
 	}
 
 	void App::run() {
-		while (pm_running) {
-			for (Layer* layer : m_layerStack) {
+		while (pm_running) 
+		{
+			for (Layer* layer : m_layerStack) 
+			{
+				//glClearColor(1, 0, 1, 1);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				layer->onUpdate();
 			}
-			pm_GLFWwindow_ptr->onUpdate();
+			pm_window_ptr->onUpdate();
 		}
 	}
 

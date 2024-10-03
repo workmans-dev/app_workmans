@@ -5,7 +5,7 @@ extern AppWMs::App* AppWMs::createApplication();
 int main(int argc, char** argv) {
 	AppWMs::Log::init();
 	std::cout << "ready to read : createApplication" << std::endl;
-	auto app = AppWMs::createApplication();
+	AppWMs::App* app = AppWMs::createApplication();
 
 	app->run();
 	delete app;

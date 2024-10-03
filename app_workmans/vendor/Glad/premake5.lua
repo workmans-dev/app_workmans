@@ -20,6 +20,10 @@ project "Glad"
 		systemversion "latest"
 		staticruntime "on"
 
-	filter "configurations:Release"
-		buildoptions "/MT"
+	filter "configurations:Debug"
+		symbols "On"
+		runtime "Debug"
 
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "On"

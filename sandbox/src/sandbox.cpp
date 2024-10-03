@@ -12,13 +12,16 @@ public:
 	void onEvent(AppWMs::Event& event) override{
 		APP_WMS_CORE_TRACE("{0}", event);
 	}
+	//void onAttach() override {
+	//	std::cout << "test" << std::endl;
+	//}
 };
 
 class Sandbox : public AppWMs::App
 {
 public:
 	Sandbox() {
-		std::cout << "created SandBox" << std::endl;
+		std::cout << "created SandBox----adding Layers" << std::endl;
 		pushLayer(new ExampleLayer());
 		pushOverlay(new AppWMs::ImGuiLayer());
 	}
