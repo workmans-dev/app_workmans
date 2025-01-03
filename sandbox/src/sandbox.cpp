@@ -21,7 +21,7 @@ class Sandbox : public AppWMs::App
 {
 public:
 	Sandbox() {
-		std::cout << "created SandBox----adding Layers" << std::endl;
+		std::cout << "created SandBox---- parent class ----adding Layers" << std::endl;
 		pushLayer(new ExampleLayer());
 		pushOverlay(new AppWMs::ImGuiLayer());
 	}

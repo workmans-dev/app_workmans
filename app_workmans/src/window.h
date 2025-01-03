@@ -28,5 +28,6 @@ namespace AppWMs {
 
 		static Window* create(const WindowProps& Win_props = WindowProps());
 
+		virtual void* getGLFWWindow() const = 0;
 	};
 }
