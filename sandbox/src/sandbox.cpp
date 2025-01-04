@@ -10,7 +10,10 @@ public:
 		//APP_WMS_CORE_INFO("ExampleLayer : updated");
 	}
 	void onEvent(AppWMs::Event& event) override{
-		APP_WMS_CORE_TRACE("{0}", event);
+		if (event.getEventType() == AppWMs::EventType::KeyPressed) {
+			AppWMs::KeyPressedEvent& e = (AppWMs::KeyPressedEvent&) event;
+			APP_WMS_CLI_TRACE("{0}", (char)e.getKeyCode());
+		}
 	}
 	//void onAttach() override {
 	//	std::cout << "test" << std::endl;

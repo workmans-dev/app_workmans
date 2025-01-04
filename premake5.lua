@@ -9,6 +9,8 @@ includeDir = {}
 includeDir["GLFW"] = "app_workmans/vendor/GLFW/include"
 includeDir["Glad"] = "app_workmans/vendor/Glad/include"
 includeDir["ImGui"] = "app_workmans/vendor/imgui"
+includeDir["glm"] = "app_workmans/vendor/glm"
+
 
 
 include "app_workmans/vendor/GLFW"
@@ -29,14 +31,18 @@ project "app_workmans"
 
 	files{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl",
+		"%{prj.name}/vendor/glm/glm/**.cppm"
 	}
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
 		"%{prj.name}/src",
 		"%{includeDir.GLFW}",
 		"%{includeDir.Glad}",
-		"%{includeDir.ImGui}"
+		"%{includeDir.ImGui}",
+		"%{includeDir.glm}"
 
 
 	}
@@ -91,7 +97,8 @@ project "sandbox"
 	}
 	includedirs{
 		"app_workmans/vendor/spdlog/include",
-		"app_workmans/src"
+		"app_workmans/src",
+		"%{includeDir.glm}"
 	}
 	links{
 		"app_workmans"

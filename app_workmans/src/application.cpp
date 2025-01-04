@@ -42,8 +42,8 @@ namespace AppWMs {
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				layer->onUpdate();
 			}
-			auto [x, y] = Input::getMousePos();
-			APP_WMS_CORE_TRACE("{0}, {1}", x, y);
+			//auto [x, y] = Input::getMousePos();
+			//APP_WMS_CORE_TRACE("{0}, {1}", x, y);
 			pm_window_ptr->onUpdate();
 		}
 	}
