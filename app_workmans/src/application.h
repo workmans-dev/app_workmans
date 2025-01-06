@@ -5,7 +5,7 @@
 #include "layerStack.h"
 #include "events/event.h"
 #include "events/applicationEvent.h"
-
+#include "imGui/imGuiLayer.h"
 
 namespace AppWMs {
 
@@ -25,6 +25,8 @@ namespace AppWMs {
 	private:
 		bool onWindowClose(WindowCloseEvent& e);
 		std::unique_ptr<Window> pm_window_ptr;
+		ImGuiLayer* pm_imGuiLayer_ptr;
+
 		bool pm_running = true;
 		LayerStack m_layerStack;
 		static App* m_Instance;

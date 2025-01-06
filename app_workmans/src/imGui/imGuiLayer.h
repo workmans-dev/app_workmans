@@ -10,23 +10,16 @@ namespace AppWMs {
 	public:
 		ImGuiLayer();
 		~ImGuiLayer();
-		void onAttach();
-		void onDetach();
-		void onUpdate();
-		void onEvent(Event& event);
+		virtual void onAttach() override;
+		virtual void onDetach() override;
+		virtual void onImGuiRender() override;
+
+		void begin();
+		void end();
 	private:
 		float m_time = 0.0f;
 
-	private:
-		// event system 
-		bool onMousePressedEvent(MousePressedEvent& e);
-		bool onMouseReleasedEvent(MouseReleasedEvent& e);
-		bool onMouseMovedEvent(MouseMovedEvent& e);
-		bool onMouseScrollEvent(MouseScrollEvent& e);
-		bool onKeyReleasedEvent(KeyReleasedEvent& e);
-		bool onKeyPressedEvent(KeyPressedEvent& e);
-		bool onKeyTypedEvent(KeyTypedEvent& e);
-		bool onWindowResizeEvent(WindowResizeEvent& e);
+
 	};
 
 }

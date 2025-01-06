@@ -33,8 +33,7 @@ project "app_workmans"
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
-		"%{prj.name}/vendor/glm/glm/**.inl",
-		"%{prj.name}/vendor/glm/glm/**.cppm"
+		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
@@ -98,6 +97,7 @@ project "sandbox"
 	includedirs{
 		"app_workmans/vendor/spdlog/include",
 		"app_workmans/src",
+		"app_workmans/vendor",
 		"%{includeDir.glm}"
 	}
 	links{

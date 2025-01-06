@@ -1,4 +1,5 @@
 #include "app_workmans.h"
+#include "imgui/imgui.h"
 #include <iostream>
 
 class ExampleLayer:public AppWMs::Layer
@@ -15,6 +16,11 @@ public:
 			APP_WMS_CLI_TRACE("{0}", (char)e.getKeyCode());
 		}
 	}
+	//virtual void onImGuiRender() override {
+	//	ImGui::Begin("test");
+	//	ImGui::Text("APPPPPPPP");
+	//	ImGui::End();
+	//}
 	//void onAttach() override {
 	//	std::cout << "test" << std::endl;
 	//}
@@ -26,12 +32,10 @@ public:
 	Sandbox() {
 		std::cout << "created SandBox---- parent class ----adding Layers" << std::endl;
 		pushLayer(new ExampleLayer());
-		pushOverlay(new AppWMs::ImGuiLayer());
 	}
 	~Sandbox() {
 
 	}
-
 
 };
 

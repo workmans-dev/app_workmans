@@ -16,7 +16,7 @@ namespace AppWMs {
 		std::vector<Layer*>::iterator end() { return m_layers.end(); }
 
 	private:
-		std::vector<Layer*> m_layers;
-		std::vector<Layer*>::iterator m_layers_iter;
+		std::vector<AppWMs::Layer*> m_layers;
+		unsigned int m_layer_insert_index = 0;
 	};
 }

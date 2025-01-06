@@ -16,7 +16,8 @@ namespace AppWMs {
 		pm_window_ptr = std::unique_ptr<Window>(Window::create());
 		// set event call back
 		pm_window_ptr->setData_EventCallBack(BIND_EVENT_FN(App::onEvent));
-
+		pm_imGuiLayer_ptr = new ImGuiLayer();
+		pushOverlay(pm_imGuiLayer_ptr);
 	}
 
 	App::~App() {
@@ -36,14 +37,20 @@ namespace AppWMs {
 	void App::run() {
 		while (pm_running) 
 		{
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 			for (Layer* layer : m_layerStack) 
 			{
-				//glClearColor(1, 0, 1, 1);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				layer->onUpdate();
 			}
-			//auto [x, y] = Input::getMousePos();
-			//APP_WMS_CORE_TRACE("{0}, {1}", x, y);
+
+			pm_imGuiLayer_ptr->begin();
+			for (Layer* layer : m_layerStack)
+			{
+				layer->onImGuiRender();
+			}
+			pm_imGuiLayer_ptr->end();
+
 			pm_window_ptr->onUpdate();
 		}
 	}
