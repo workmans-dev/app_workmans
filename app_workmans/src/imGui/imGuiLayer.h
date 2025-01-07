@@ -6,7 +6,7 @@
 
 
 namespace AppWMs {
-	class APP_WMS_API ImGuiLayer :public Layer {
+	class ImGuiLayer :public Layer {
 	public:
 		ImGuiLayer();
 		~ImGuiLayer();

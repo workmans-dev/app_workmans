@@ -20,12 +20,13 @@ include "app_workmans/vendor/imgui"
 
 project "app_workmans"
 	location "app_workmans"
-	kind "SharedLib"
+	kind "StaticLib"
 	language "C++"
+	cppdialect "C++20"
+	staticruntime "on"
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 	
-
 	pchheader "pch.h"
 	pchsource "%{prj.name}/src/pch.cpp"
 
@@ -35,6 +36,9 @@ project "app_workmans"
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
+	defines{
+		"_CRT_SECURE_NO_WARNINGS"
+	}
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
 		"%{prj.name}/src",
@@ -42,9 +46,8 @@ project "app_workmans"
 		"%{includeDir.Glad}",
 		"%{includeDir.ImGui}",
 		"%{includeDir.glm}"
-
-
 	}
+
 	-- static lib link
 	links{
 		"GLFW",
@@ -52,33 +55,30 @@ project "app_workmans"
 		"ImGui",
 		"opengl32.lib"
 	}
-	filter "system:windows"
-	cppdialect "C++20"
-	systemversion "latest"
-	staticruntime "off"
 
-	defines{
-		"APP_WMS_PLATFORM_WINDOWS",
-		"APP_WMS_BUILD_DLL",
-		"GLFW_INCLUDE_NONE",
-	}
-	postbuildcommands{
-		"{MKDIR} ../bin/" .. outputdir .. "/sandbox", 
-		"{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/sandbox"
-	}
+	filter "system:windows"
+		systemversion "latest"
+		defines{
+			"APP_WMS_PLATFORM_WINDOWS",
+			"APP_WMS_BUILD_DLL",
+			"GLFW_INCLUDE_NONE",
+		}
+		buildoptions { "/utf-8" } 
+
+
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
-		symbols "On"
+		symbols "on"
 		runtime "Debug"
 
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
-		optimize "On"
+		optimize "on"
 		runtime "Release"
 
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
-		optimize "On"
+		optimize "on"
 		runtime "Debug"
 
 
@@ -87,6 +87,8 @@ project "sandbox"
 	location "sandbox"
 	kind "ConsoleApp"
 	language "C++"
+	cppdialect "C++20"
+	staticruntime "on"
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 
@@ -105,27 +107,25 @@ project "sandbox"
 	}
 
 	filter "system:windows"
-	cppdialect "C++20"
-	staticruntime "off"
-	systemversion "latest"
-
-	defines{
-		"APP_WMS_PLATFORM_WINDOWS",
-	}
+		systemversion "latest"
+		buildoptions { "/utf-8" } 
+		defines{
+			"APP_WMS_PLATFORM_WINDOWS",
+		}
 
 	filter "configurations:Debug"
 		defines "APP_WMS_DEBUG"
-		symbols "On"
+		symbols "on"
 		runtime "Debug"
 
 		
 	filter "configurations:Release"
 		defines "APP_WMS_RELEASE"
-		optimize "On"
+		optimize "on"
 		runtime "Release"
 		
 	filter "configurations:Dist"
 		defines "APP_WMS_DIST"
-		optimize "On"
+		optimize "on"
 		runtime "Release"
 		

@@ -2,7 +2,7 @@
 #include "events/event.h"
 
 namespace AppWMs {
-	class APP_WMS_API KeyEvent:public Event {
+	class KeyEvent:public Event {
 	public:
 		inline int getKeyCode() const { return m_KeyCode; }
 		EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
@@ -12,7 +12,7 @@ namespace AppWMs {
 		int m_KeyCode;
 	};
 
-	class APP_WMS_API KeyPressedEvent :public KeyEvent {
+	class  KeyPressedEvent :public KeyEvent {
 	public:
 		KeyPressedEvent(int keycode, int repeatCount) 
 			:KeyEvent(keycode), pm_repeatCount(repeatCount){}
@@ -27,7 +27,7 @@ namespace AppWMs {
 		int pm_repeatCount;
 	};
 
-	class APP_WMS_API KeyReleasedEvent :public KeyEvent {
+	class  KeyReleasedEvent :public KeyEvent {
 	public:
 		KeyReleasedEvent(int keycode):KeyEvent(keycode) {}
 		std::string toString() const override {

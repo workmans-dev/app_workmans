@@ -27,7 +27,7 @@ namespace AppWMs {
 	#define EVENT_CLASS_CATEGORY(category) virtual int getCategoryFlags() const override {return category;}
 
 
-	class APP_WMS_API Event {
+	class  Event {
 		friend class EventDispatcher;
 	public:
 		virtual ~Event() = default;

@@ -9,7 +9,7 @@
 
 namespace AppWMs {
 
-	class APP_WMS_API App
+	class  App
 	{
 	public:
 		App();

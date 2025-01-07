@@ -1,7 +1,8 @@
 #pragma once
 
 #include "core.h"
-#include "spdlog/spdlog.h"
+
+#include "spdlog/logger.h"
 // this is really important header file to be able to execute a function which it is coming from pointer
 // see here 
 // application.cpp ----- 
@@ -10,11 +11,11 @@
 #include "spdlog/fmt/ostr.h"
 
 namespace AppWMs {
-	class APP_WMS_API Log {
+	class Log {
 	public:
 		static void init();
-		inline static std::shared_ptr<spdlog::logger>& GetCoreLogger();
-		inline static std::shared_ptr<spdlog::logger>& GetClientLogger();
+		static std::shared_ptr<spdlog::logger>& GetCoreLogger();
+		static std::shared_ptr<spdlog::logger>& GetClientLogger();
 	private:
 		static std::shared_ptr<spdlog::logger> s_CoreLogger;
 		static std::shared_ptr<spdlog::logger> s_ClientLogger;

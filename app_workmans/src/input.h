@@ -2,7 +2,7 @@
 #include "core.h"
 
 namespace AppWMs {
-	class APP_WMS_API Input {
+	class  Input {
 	public:
 		inline static bool IsKeyPressed(int keycode) { return m_Input_instance_ptr->IsKeyPressedImpl(keycode); }
 

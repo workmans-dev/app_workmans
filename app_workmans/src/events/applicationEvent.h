@@ -3,7 +3,7 @@
 
 
 namespace AppWMs {
-	class APP_WMS_API WindowResizeEvent : public Event {
+	class  WindowResizeEvent : public Event {
 	public:
 		WindowResizeEvent(unsigned int w, unsigned int h):pm_width(w), pm_height(h){}
 		inline unsigned int getWidth() const { return pm_width; }
@@ -23,7 +23,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMS_API WindowCloseEvent : public Event {
+	class  WindowCloseEvent : public Event {
 	public:
 		WindowCloseEvent(){}
 		EVENT_CLASS_TYPE(WindowClose)
@@ -31,7 +31,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMS_API AppTickEvent : public Event {
+	class  AppTickEvent : public Event {
 	public:
 		AppTickEvent() {}
 		EVENT_CLASS_TYPE(AppTick)
@@ -39,7 +39,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMS_API AppUpdateEvent : public Event {
+	class  AppUpdateEvent : public Event {
 	public:
 		AppUpdateEvent() {}
 		EVENT_CLASS_TYPE(AppUpdate)
@@ -47,7 +47,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMS_API AppRenderEvent : public Event {
+	class  AppRenderEvent : public Event {
 	public:
 		AppRenderEvent() {}
 		EVENT_CLASS_TYPE(AppRender)
@@ -55,7 +55,7 @@ namespace AppWMs {
 	};
 
 
-	class APP_WMS_API WindowMovedEvent : public Event {
+	class  WindowMovedEvent : public Event {
 	public:
 		WindowMovedEvent() {}
 		EVENT_CLASS_TYPE(WindowMoved)

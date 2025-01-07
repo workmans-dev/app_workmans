@@ -2,7 +2,7 @@
 #include "events/event.h"
 
 namespace AppWMs {
-	class APP_WMS_API MouseMovedEvent :public Event {
+	class  MouseMovedEvent :public Event {
 		public:
 			MouseMovedEvent(float x, float y):m_xPnt(x), m_yPnt(y){}
 			inline float get_xPnt() const { return m_xPnt; }
@@ -20,7 +20,7 @@ namespace AppWMs {
 			float m_xPnt, m_yPnt;
 	};
 
-	class APP_WMS_API MouseScrollEvent :public Event {
+	class  MouseScrollEvent :public Event {
 		public:
 			MouseScrollEvent(float x, float y) :m_xScroll(x), m_yScroll(y) {}
 			inline float get_xScroll() const { return m_xScroll; }
@@ -38,7 +38,7 @@ namespace AppWMs {
 			float m_xScroll, m_yScroll;
 	};
 
-	class APP_WMS_API MouseButtonEvent :public Event {
+	class  MouseButtonEvent :public Event {
 		public:
 			inline int get_mouseButton() const { return m_mouseBtn; }
 			//// ----- to declare which event is ocurring.
@@ -49,7 +49,7 @@ namespace AppWMs {
 			int m_mouseBtn;
 	};
 
-	class APP_WMS_API MousePressedEvent:public MouseButtonEvent
+	class  MousePressedEvent:public MouseButtonEvent
 	{
 	public:
 		MousePressedEvent(int btn) :MouseButtonEvent(btn){}
@@ -61,7 +61,7 @@ namespace AppWMs {
 		EVENT_CLASS_TYPE(MouseButtonPressed);
 	};
 
-	class APP_WMS_API MouseReleasedEvent :public MouseButtonEvent 
+	class  MouseReleasedEvent :public MouseButtonEvent 
 	{
 	public:
 		MouseReleasedEvent(int btn) :MouseButtonEvent(btn) {}

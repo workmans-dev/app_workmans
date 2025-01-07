@@ -3,7 +3,7 @@
 #include "events/event.h"
 
 namespace AppWMs{
-	class APP_WMS_API Layer {
+	class Layer {
 		public:
 			Layer(const std::string& name = "Layer");
 			virtual ~Layer();

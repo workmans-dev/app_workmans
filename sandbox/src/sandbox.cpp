@@ -16,11 +16,11 @@ public:
 			APP_WMS_CLI_TRACE("{0}", (char)e.getKeyCode());
 		}
 	}
-	//virtual void onImGuiRender() override {
-	//	ImGui::Begin("test");
-	//	ImGui::Text("APPPPPPPP");
-	//	ImGui::End();
-	//}
+	virtual void onImGuiRender() override {
+		ImGui::Begin("test");
+		ImGui::Text("APPPPPPPP");
+		ImGui::End();
+	}
 	//void onAttach() override {
 	//	std::cout << "test" << std::endl;
 	//}

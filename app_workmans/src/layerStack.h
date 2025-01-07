@@ -3,7 +3,7 @@
 #include "layer.h"
 
 namespace AppWMs {
-	class APP_WMS_API LayerStack {
+	class LayerStack {
 	public:
 		LayerStack();
 		~LayerStack();

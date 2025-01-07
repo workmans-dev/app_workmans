@@ -47,7 +47,6 @@ namespace AppWMs {
 
 	void ImGuiLayer::onDetach()
 	{
-		glfwPollEvents();
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -72,7 +71,7 @@ namespace AppWMs {
 	void ImGuiLayer::end() {
 		ImGuiIO& io = ImGui::GetIO();
 		App& app = App::getApp();
-		io.DisplaySize = ImVec2(app.getWindow().getWidth(), app.getWindow().getHeight());
+		io.DisplaySize = ImVec2((float)app.getWindow().getWidth(), (float)app.getWindow().getHeight());
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

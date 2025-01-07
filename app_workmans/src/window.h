@@ -13,7 +13,7 @@ namespace AppWMs {
 			unsigned int width_in = 1280, unsigned int height_in = 720):w(width_in), h(height_in), title(title_in){}
 	};
 
-	class APP_WMS_API Window
+	class  Window
 	{
 	public:
 		using EventCallBackFn = std::function<void(Event&)>;
