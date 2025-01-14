@@ -1,5 +1,8 @@
 #pragma once
 #include "window.h"
+
+#include "renderer/graphicContext.h"
+
 #include <GLFW/glfw3.h>
 
 namespace AppWMs {
@@ -13,10 +16,14 @@ namespace AppWMs {
 			EventCallBackFn EventCallBack;
 		};
 		WindowData pm_data;
+
 		GLFWwindow* pm_GLFWwindow_ptr;
+		GraphicContext* m_context_ptr;
+		
 	private:
 		virtual void init(const WindowProps& Win_props);
 		virtual void close();
+
 	public:
 		Win_Window(const WindowProps& Win_props);
 		virtual ~Win_Window();

@@ -3,6 +3,8 @@
 #include "core.h"
 
 #include "spdlog/logger.h"
+#include <spdlog/fmt/fmt.h>
+
 // this is really important header file to be able to execute a function which it is coming from pointer
 // see here 
 // application.cpp ----- 

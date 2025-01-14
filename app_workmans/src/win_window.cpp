@@ -4,7 +4,9 @@
 #include "events/applicationEvent.h"
 #include "events/keyEvent.h"
 #include "events/mouseEvent.h"
-#include <glad/glad.h>
+
+#include "openGL/openGLcontext.h"
+
 
 
 namespace AppWMs {
@@ -18,14 +20,17 @@ namespace AppWMs {
 	{
 		return new Win_Window(Win_props);
 	}
+
 	Win_Window::Win_Window(const WindowProps& Win_props) 
 	{
 		init(Win_props);
 	}
+
 	Win_Window::~Win_Window() 
 	{
 		close();
 	}
+
 	void Win_Window::init(const WindowProps& Win_props)
 	{
 		pm_data.w = Win_props.w;
@@ -44,9 +49,11 @@ namespace AppWMs {
 		pm_GLFWwindow_ptr = glfwCreateWindow((int)Win_props.w, 
 			(int)Win_props.h, Win_props.title.c_str(), 
 			nullptr, nullptr);
-		glfwMakeContextCurrent(pm_GLFWwindow_ptr);
-		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		APP_WMS_CORE_ASSERTS(status, "Failed init!!!!!!")
+
+		m_context_ptr = new OpenGLContext(pm_GLFWwindow_ptr);
+		m_context_ptr->init();
+
+
 		glfwSetWindowUserPointer(pm_GLFWwindow_ptr, &pm_data);
 		setVSync(true);
 
@@ -125,18 +132,19 @@ namespace AppWMs {
 				MouseMovedEvent event((float)xPos, (float)yPos);
 				data.EventCallBack(event);
 			});
-
-
 	}
+
 	void Win_Window::close() 
 	{
 		glfwDestroyWindow(pm_GLFWwindow_ptr);
 	}
+
 	void Win_Window::onUpdate()
 	{
 		glfwPollEvents();
-		glfwSwapBuffers(pm_GLFWwindow_ptr);
+		m_context_ptr->swapBuffers();
 	}
+
 	void Win_Window::setVSync(bool enabled)
 	{
 		if (enabled) {
@@ -147,6 +155,7 @@ namespace AppWMs {
 		}
 		pm_data.VSync = enabled;
 	}
+
 	bool Win_Window::isVSync() const
 	{
 		return pm_data.VSync;

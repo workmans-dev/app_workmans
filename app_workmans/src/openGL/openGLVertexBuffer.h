@@ -1,0 +1,33 @@
+#pragma once
+#include "renderer/buffer.h"
+
+namespace AppWMs {
+	
+
+	class OpenGLVertexBuffer :public VertexBuffer {
+	public:
+		OpenGLVertexBuffer(float* vertices, uint32_t size);
+		virtual ~OpenGLVertexBuffer();
+		virtual void bind() const override;
+		virtual void unbind() const override;
+		virtual const BufferLayout& getLayout() const override { return pm_layout; }
+		virtual void setLayout(const BufferLayout& layout) override { pm_layout = layout; }
+
+	private:
+		uint32_t pm_renderID;
+		BufferLayout pm_layout;
+	};
+
+	class OpenGLIndexBuffer :public IndexBuffer {
+	public:
+		OpenGLIndexBuffer(uint32_t* indexes, uint32_t count);
+		virtual ~OpenGLIndexBuffer();
+		virtual void bind() const override;
+		virtual void unbind() const override;
+		virtual uint32_t getCount() const { return pm_count; }
+	private:
+		uint32_t pm_renderID;
+		uint32_t pm_count;
+	};
+
+}
