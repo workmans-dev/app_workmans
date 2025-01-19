@@ -3,7 +3,7 @@
 
 namespace AppWMs {
 	
-
+	// vertexBuffer
 	class OpenGLVertexBuffer :public VertexBuffer {
 	public:
 		OpenGLVertexBuffer(float* vertices, uint32_t size);
@@ -18,6 +18,8 @@ namespace AppWMs {
 		BufferLayout pm_layout;
 	};
 
+
+	// indexBuffer
 	class OpenGLIndexBuffer :public IndexBuffer {
 	public:
 		OpenGLIndexBuffer(uint32_t* indexes, uint32_t count);

@@ -6,9 +6,6 @@
 #include "events/event.h"
 #include "events/applicationEvent.h"
 #include "imGui/imGuiLayer.h"
-#include "renderer/shader.h"
-#include "renderer/buffer.h"
-#include "renderer/vertexArray.h"
 
 namespace AppWMs {
 
@@ -29,15 +26,12 @@ namespace AppWMs {
 		bool onWindowClose(WindowCloseEvent& e);
 		std::unique_ptr<Window> pm_window_ptr;
 
-		std::unique_ptr<Shader> pm_shader_ptr;
-		std::shared_ptr<VertexArray> pm_vertexArray_ptr;
-
-
 		ImGuiLayer* pm_imGuiLayer_ptr;
 
 		bool pm_running = true;
 		LayerStack pm_layerStack;
 		static App* pm_Instance;
+		float pm_dt =0.0f;
 
 	};
 

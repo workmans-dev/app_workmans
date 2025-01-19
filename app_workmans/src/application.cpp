@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "application.h"
-#include <glad/glad.h>
 #include "renderer/renderer.h"
 #include "input.h"
+#include "core/timer.h"
+
+#include <glfw/glfw3.h>
 
 namespace AppWMs {
 	App* App::pm_Instance = nullptr;
@@ -16,60 +18,10 @@ namespace AppWMs {
 		pm_window_ptr = std::unique_ptr<Window>(Window::create());
 		// set event call back
 		pm_window_ptr->setData_EventCallBack(BIND_EVENT_FN(App::onEvent));
+
 		pm_imGuiLayer_ptr = new ImGuiLayer();
 		pushOverlay(pm_imGuiLayer_ptr);
 
-
-		// test for triangle
-		pm_vertexArray_ptr.reset(VertexArray::create());
-
-		float vertexes[3 * 7] = {
-			-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-			0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
-		};
-		std::shared_ptr<VertexBuffer> pm_vertexBuffer_ptr;
-		pm_vertexBuffer_ptr.reset( VertexBuffer::create(vertexes, sizeof(vertexes)));
-
-		BufferLayout layout = {
-			//BufferElements
-			{ShaderDataType::Float3, "a_Position"},
-			{ShaderDataType::Float4, "a_Color"}
-		};
-		pm_vertexBuffer_ptr->setLayout(layout);
-		pm_vertexArray_ptr->addVertexBuffer(pm_vertexBuffer_ptr);
-
-		unsigned int indexes[3] = { 0,1,2 };
-		std::shared_ptr<IndexBuffer> pm_indexBuffer_ptr;
-		pm_indexBuffer_ptr.reset(IndexBuffer::create(indexes, sizeof(indexes)/sizeof(uint32_t)));
-		pm_vertexArray_ptr->setIndexBuffer(pm_indexBuffer_ptr);
-
-		// shader
-		std::string vertexSource = R"(
-			#version 410 core
-			layout(location=0) in vec3 a_Position;
-			layout(location=1) in vec4 a_Color;
-			out vec3 v_Position;
-			out vec4 v_Color;
-			void main()
-			{
-				v_Position = a_Position;
-				v_Color = a_Color;
-				gl_Position = vec4(a_Position, 1.0);
-			}
-		)";
-		std::string fragmentSource = R"(
-			#version 410 core
-			layout(location = 0) out vec4 color;
-
-			in vec3 v_Position;
-			in vec4 v_Color;
-			void main()
-			{
-				color = v_Color;
-			}
-		)";
-		pm_shader_ptr.reset(new Shader(vertexSource, fragmentSource));
 	}
 
 	App::~App() {
@@ -90,22 +42,16 @@ namespace AppWMs {
 	void App::run() {
 		while (pm_running) 
 		{
-			// test for triangle
-			RendererCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-			RendererCommand::clear();
-
-			Renderer::beginScene();
-			pm_shader_ptr->bind();
-			pm_vertexArray_ptr->bind();
-			Renderer::submit(pm_vertexArray_ptr);
-			Renderer::end();
-			glDrawElements(GL_TRIANGLES, pm_vertexArray_ptr->getIndexBuffer()->getCount(),
-				GL_UNSIGNED_INT, nullptr);
+			float time = (float)glfwGetTime();
+			Timer timer = time - pm_dt;
+			pm_dt = timer;
+			// layer base class onUpdate
 			for (Layer* layer : pm_layerStack) 
 			{
-				layer->onUpdate();
+				layer->onUpdate(timer);
 			}
 
+			// gui layer
 			pm_imGuiLayer_ptr->begin();
 			for (Layer* layer : pm_layerStack)
 			{

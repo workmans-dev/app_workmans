@@ -1,5 +1,7 @@
 #pragma once
 #include "core.h"
+#include "core/timer.h"
+
 #include "events/event.h"
 
 namespace AppWMs{
@@ -10,9 +12,10 @@ namespace AppWMs{
 
 			virtual void onAttach() {}
 			virtual void onDetach() {}
-			virtual void onUpdate() {}
-			virtual void onImGuiRender(){}
+			virtual void onUpdate(Timer timer) {}
 			virtual void onEvent(Event& event) {}
+
+			virtual void onImGuiRender() {}
 
 			inline const std::string& getName() const { return m_debugName;}
 

@@ -48,10 +48,10 @@ namespace AppWMs {
 			APP_WMS_CORE_ASSERTS(false, "No count! !")
 			return 0;
 		}
-		BufferElements() {}
+		BufferElements() { }
 		BufferElements(ShaderDataType type, const std::string& name, bool normalized =false)
-			:shaderDataType(type), name(name), size(ShaderDataTypeSize(type)), offset(0), normalized(normalized)
-		{}
+			:shaderDataType(type), name(name), 
+			size(ShaderDataTypeSize(type)), offset(0), normalized(normalized){ }
 	};
 
 	class BufferLayout {
@@ -91,6 +91,7 @@ namespace AppWMs {
 		virtual void bind() const = 0;
 		virtual void unbind() const = 0;
 		virtual const BufferLayout& getLayout() const = 0;
+		// layout will be passing through OpenGLVertexArray::addVertexBuffer
 		virtual void setLayout(const BufferLayout& layout) = 0;
 		static VertexBuffer* create(float* vertices, uint32_t size);
 	};

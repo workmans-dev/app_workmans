@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "shader.h"
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 
 
 namespace AppWMs {
@@ -116,5 +117,18 @@ namespace AppWMs {
 	void Shader::unbind() const
 	{
 		glUseProgram(0);
+	}
+	void Shader::uploadUniformMatrix(const std::string& name,const glm::mat4& mat)
+	{
+		GLint location = glGetUniformLocation(pm_renderID, name.c_str());
+		// f : float, v: vector >> float vector  >> ~fv
+		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
+
+	}
+	void Shader::uploadUniformFloat4(const std::string& name, const glm::vec4& values)
+	{
+		GLint location = glGetUniformLocation(pm_renderID, name.c_str());
+		glUniform4f(location, values.x, values.y, values.z, values.w);
+
 	}
 }
