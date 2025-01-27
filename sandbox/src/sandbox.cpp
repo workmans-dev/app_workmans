@@ -3,10 +3,10 @@
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 
-class WindowLayer:public AppWMs::Layer
+class SceneLayer:public AppWMs::Layer
 {
 public:
-	WindowLayer() :Layer("Example"), pm_camera(-1.6f, 1.6f, -.9f, .9f), pm_camera_pos(0.0f){
+	SceneLayer() :Layer("Example"), pm_camera(-1.6f, 1.6f, -.9f, .9f), pm_camera_pos(0.0f){
 		// test for triangle
 		pm_vertexArray_ptr.reset(AppWMs::VertexArray::create());
 
@@ -22,7 +22,7 @@ public:
 			0.5f, 0.5f, 0.0f,
 			-0.5f, 0.5f, 0.0f,
 		};
-		std::shared_ptr<AppWMs::VertexBuffer> pm_vertexBuffer_ptr;
+		AppWMs::Ref<AppWMs::VertexBuffer> pm_vertexBuffer_ptr;
 		pm_vertexBuffer_ptr.reset(AppWMs::VertexBuffer::create(sq_verts, sizeof(sq_verts)));
 
 		AppWMs::BufferLayout layout = {
@@ -36,7 +36,7 @@ public:
 
 		unsigned int tri_indexes[3] = { 0,1,2 };
 		unsigned int sq_indexes[6] = { 0,1,2,2,3,0 };
-		std::shared_ptr<AppWMs::IndexBuffer> pm_indexBuffer_ptr;
+		AppWMs::Ref<AppWMs::IndexBuffer> pm_indexBuffer_ptr;
 		pm_indexBuffer_ptr.reset(AppWMs::IndexBuffer::create(sq_indexes, sizeof(sq_indexes) / sizeof(uint32_t)));
 		pm_vertexArray_ptr->setIndexBuffer(pm_indexBuffer_ptr);
 
@@ -184,8 +184,9 @@ public:
 
 private:
 	AppWMs::Camera pm_camera;
-	std::shared_ptr<AppWMs::Shader> pm_shader_ptr;
-	std::shared_ptr<AppWMs::VertexArray> pm_vertexArray_ptr;
+	AppWMs::Ref<AppWMs::Shader> pm_shader_ptr;
+	AppWMs::Ref<AppWMs::VertexArray> pm_vertexArray_ptr;
+	AppWMs::Ref<AppWMs::Texture2D> pm_texture2D_ptr;
 	glm::vec3 pm_camera_pos;
 	float pm_camera_rot=0.0f;
 	float pm_camera_pos_speed = 0.005f;
@@ -200,7 +201,7 @@ class Sandbox : public AppWMs::App
 {
 public:
 	Sandbox() {
-		pushLayer(new WindowLayer());
+		pushLayer(new SceneLayer());
 	}
 	~Sandbox() {
 

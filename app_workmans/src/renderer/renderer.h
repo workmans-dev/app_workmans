@@ -9,7 +9,7 @@ namespace AppWMs {
 	public:
 
 		static void beginScene(Camera& camera);
-		static void submit(const std::shared_ptr<VertexArray>& vertexArray, const std::shared_ptr<Shader> shader,
+		static void submit(const Ref<VertexArray>& vertexArray, const Ref<Shader> shader,
 			const glm::mat4& transform=glm::mat4(1.0f));
 		static void end();
 

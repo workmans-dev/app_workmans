@@ -16,11 +16,11 @@ namespace AppWMs {
 	class Log {
 	public:
 		static void init();
-		static std::shared_ptr<spdlog::logger>& GetCoreLogger();
-		static std::shared_ptr<spdlog::logger>& GetClientLogger();
+		static Ref<spdlog::logger>& GetCoreLogger();
+		static Ref<spdlog::logger>& GetClientLogger();
 	private:
-		static std::shared_ptr<spdlog::logger> s_CoreLogger;
-		static std::shared_ptr<spdlog::logger> s_ClientLogger;
+		static Ref<spdlog::logger> s_CoreLogger;
+		static Ref<spdlog::logger> s_ClientLogger;
 	};
 }
 

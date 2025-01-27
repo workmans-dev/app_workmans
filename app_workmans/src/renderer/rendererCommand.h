@@ -11,7 +11,7 @@ namespace AppWMs {
 		inline static void clear() { 
 			pm_rendererAPI_ptr->clear(); 
 		}
-		inline static void drawIndexed(const std::shared_ptr<VertexArray>& vertexArray) {
+		inline static void drawIndexed(const Ref<VertexArray>& vertexArray) {
 			pm_rendererAPI_ptr->drawIndexed(vertexArray);
 		}
 	private:

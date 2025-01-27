@@ -10,6 +10,7 @@
 // rederer 
 #include "renderer/shader.h"
 #include "renderer/vertexArray.h"
+#include "renderer/texture.h"
 #include "renderer/rendererCommand.h"
 #include "renderer/renderer.h"
 

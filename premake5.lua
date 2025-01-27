@@ -10,6 +10,7 @@ includeDir["GLFW"] = "app_workmans/vendor/GLFW/include"
 includeDir["Glad"] = "app_workmans/vendor/Glad/include"
 includeDir["ImGui"] = "app_workmans/vendor/imgui"
 includeDir["glm"] = "app_workmans/vendor/glm"
+includeDir["stb_image"] = "app_workmans/vendor/stb_image"
 
 
 
@@ -34,7 +35,9 @@ project "app_workmans"
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
-		"%{prj.name}/vendor/glm/glm/**.inl"
+		"%{prj.name}/vendor/glm/glm/**.inl",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp"
 	}
 	defines{
 		"_CRT_SECURE_NO_WARNINGS"
@@ -45,7 +48,8 @@ project "app_workmans"
 		"%{includeDir.GLFW}",
 		"%{includeDir.Glad}",
 		"%{includeDir.ImGui}",
-		"%{includeDir.glm}"
+		"%{includeDir.glm}",
+		"%{includeDir.stb_image}"
 	}
 
 	-- static lib link
