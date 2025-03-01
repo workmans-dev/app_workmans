@@ -5,7 +5,7 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_glfw.h"
 
-#include "application.h"
+#include "core/application.h"
 
 #include "GLFW/glfw3.h"
 #include "glad/glad.h"
@@ -15,9 +15,11 @@ namespace AppWMs {
 	ImGuiLayer::ImGuiLayer():Layer("ImGuiLayer")
 	{
 	}
+
 	ImGuiLayer::~ImGuiLayer()
 	{
 	}
+
 	void ImGuiLayer::onAttach()
 	{
 		// Setup Dear ImGui context
@@ -45,6 +47,17 @@ namespace AppWMs {
 		ImGui_ImplOpenGL3_Init("#version 410");
 	}
 
+
+
+	void ImGuiLayer::onEvent(Event& event)
+	{
+		if (!pm_eventBlocking) {
+			ImGuiIO& io = ImGui::GetIO();
+			event.p_handled |= event.isInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+			event.p_handled |= event.isInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+		}
+	}
+
 	void ImGuiLayer::onDetach()
 	{
 		ImGui_ImplOpenGL3_Shutdown();
@@ -61,12 +74,6 @@ namespace AppWMs {
 		ImGui::NewFrame();
 	}
 
-	void ImGuiLayer::onImGuiRender()
-	{
-		static bool win = true;
-		ImGui::ShowDemoWindow(&win);
-
-	}
 
 	void ImGuiLayer::end() {
 		ImGuiIO& io = ImGui::GetIO();

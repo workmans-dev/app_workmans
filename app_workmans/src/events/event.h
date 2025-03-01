@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.h"
-#include "core.h"
+#include "core/core.h"
 
 namespace AppWMs {
 	enum class EventType {
@@ -42,22 +42,20 @@ namespace AppWMs {
 
 
 	class EventDispatcher {
-		template<typename T>
-		using EventFn = std::function<bool(T&)>;
 	public:
-		// m_event(event) is a Event object , type : <EventType> //
-		EventDispatcher(Event& event):m_event(event){}
+		// pm_event(event) is a Event object , type : <EventType> //
+		EventDispatcher(Event& event):pm_event(event){}
 
-		template <typename T>
-		bool Dispatch(EventFn<T> func) {
-			if (m_event.getEventType()==T::getStaticType()) {
-				m_event.p_handled = func(*(T*)& m_event);
+		template <typename T, typename F>
+		bool Dispatch(const F& func) {
+			if (pm_event.getEventType()==T::getStaticType()) {
+				pm_event.p_handled = func(static_cast<T&>(pm_event));
 				return true;
 			}
 			return false;
 		}
 	private:
-		Event& m_event;
+		Event& pm_event;
 	};
 
 	inline std::ostream& operator<<(std::ostream& os, const Event& e) {

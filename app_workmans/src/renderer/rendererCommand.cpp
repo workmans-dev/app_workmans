@@ -5,7 +5,8 @@
 
 namespace AppWMs {
 
-	RendererAPI* RendererCommand::pm_rendererAPI_ptr =
-		new OpenGLRendererAPI;
+	Scope<RendererAPI> RendererCommand::pm_rendererAPI_ptr =
+		std::make_unique< OpenGLRendererAPI>();
+
 
 }

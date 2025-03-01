@@ -48,7 +48,6 @@ namespace AppWMs {
 			APP_WMS_CORE_ASSERTS(false, "No count! !")
 			return 0;
 		}
-		BufferElements() { }
 		BufferElements(ShaderDataType type, const std::string& name, bool normalized =false)
 			:shaderDataType(type), name(name), 
 			size(ShaderDataTypeSize(type)), offset(0), normalized(normalized){ }

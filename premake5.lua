@@ -11,6 +11,7 @@ includeDir["Glad"] = "app_workmans/vendor/Glad/include"
 includeDir["ImGui"] = "app_workmans/vendor/imgui"
 includeDir["glm"] = "app_workmans/vendor/glm"
 includeDir["stb_image"] = "app_workmans/vendor/stb_image"
+includeDir["entt"] = "app_workmans/vendor/entt/include"
 
 
 
@@ -49,7 +50,8 @@ project "app_workmans"
 		"%{includeDir.Glad}",
 		"%{includeDir.ImGui}",
 		"%{includeDir.glm}",
-		"%{includeDir.stb_image}"
+		"%{includeDir.stb_image}",
+		"%{includeDir.entt}"
 	}
 
 	-- static lib link
@@ -104,7 +106,8 @@ project "sandbox"
 		"app_workmans/vendor/spdlog/include",
 		"app_workmans/src",
 		"app_workmans/vendor",
-		"%{includeDir.glm}"
+		"%{includeDir.glm}",
+		"%{includeDir.entt}"
 	}
 	links{
 		"app_workmans"

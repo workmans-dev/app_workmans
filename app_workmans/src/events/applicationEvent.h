@@ -11,7 +11,6 @@ namespace AppWMs {
 
 		std::string toString() const override {
 			std::stringstream ss;
-			ss << "WindowResizeEvent : " << pm_width << " , " << pm_height;
 			return ss.str();
 		}
 

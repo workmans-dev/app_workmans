@@ -3,6 +3,7 @@
 #include "openGL/openGLcontext.h"
 
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
 //Graphics Library Framework.
 //The name reflects its purpose : providing a framework for creating and managing windows, 
@@ -20,6 +21,7 @@ namespace AppWMs {
 
 	void OpenGLContext::init()
 	{
+		APP_WMS_PROFILE_FUNC();
 		glfwMakeContextCurrent(m_windowHandle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		APP_WMS_CORE_ASSERTS(status, "Failed init!!!!!!");
@@ -31,11 +33,20 @@ namespace AppWMs {
 		APP_WMS_CORE_INFO("  renderer : {0}", reinterpret_cast<const char*>(glString));
 		APP_WMS_CORE_INFO("  version : {0}", reinterpret_cast<const char*>(glVersion));
 
+	//#ifdef APP_WMS_ENABLE_ASSERTS
+	//	int version;
+	//	int point;
+	//	glGetIntegerv(GLFW_VERSION_MAJOR, &version);
+	//	glGetIntegerv(GLFW_VERSION_MINOR, &point);
+	//	APP_WMS_CORE_ASSERTS(version > 4 || (version == 4 && point >= 5), "required at least version 4.5");
+	//#endif	
 	}
+
+
 
 	void OpenGLContext::swapBuffers()
 	{
-
+		APP_WMS_PROFILE_FUNC();
 		glfwSwapBuffers(m_windowHandle);
 
 	}

@@ -14,7 +14,7 @@ namespace AppWMs{
 
 		virtual const std::vector<Ref<VertexBuffer>> getVertexBuffers() const = 0;
 		virtual const Ref<IndexBuffer> getIndexBuffer() const = 0;
-		static VertexArray* create();
+		static Ref<VertexArray> create();
 		
 	};
 

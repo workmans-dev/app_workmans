@@ -1,134 +1,70 @@
 #include "pch.h"
 #include "shader.h"
-#include <glad/glad.h>
-#include <glm/gtc/type_ptr.hpp>
+
+#include "renderer/renderer.h"
+#include "openGL/openGLShader.h"
 
 
 namespace AppWMs {
-	Shader::Shader(const std::string& vertexSource, const std::string& fragmentSource)
+	Ref<Shader> Shader::create(const std::string& filePath)
 	{
-		// Create an empty vertex shader handle
-		GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-		// Send the vertex shader source code to GL
-		// Note that std::string's .c_str is NULL character terminated.
-		const GLchar* source = (const GLchar*)vertexSource.c_str();
-		glShaderSource(vertexShader, 1, &source, 0);
-
-		// Compile the vertex shader
-		glCompileShader(vertexShader);
-
-		GLint isCompiled = 0;
-		glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &isCompiled);
-		if (isCompiled == GL_FALSE)
-		{
-			GLint maxLength = 0;
-			glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &maxLength);
-
-			// The maxLength includes the NULL character
-			std::vector<GLchar> infoLog(maxLength);
-			glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
-
-			// We don't need the shader anymore.
-			glDeleteShader(vertexShader);
-
-			APP_WMS_CORE_ERROR("{0}", infoLog.data());
-			return;
+		switch (Renderer::getRenderer()) {
+		case RendererAPI::SelectRenderer::None: APP_WMS_CORE_ASSERTS(false, "Renderer is None");
+		case RendererAPI::SelectRenderer::OpenGL: return std::make_shared<OpenGLShader>(filePath);
 		}
+		APP_WMS_CORE_ASSERTS(false, "Unknown renderer");
+		return nullptr;
+	}
 
-		// Create an empty fragment shader handle
-		GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-		// Send the fragment shader source code to GL
-		// Note that std::string's .c_str is NULL character terminated.
-		source = (const GLchar*)fragmentSource.c_str();
-		glShaderSource(fragmentShader, 1, &source, 0);
-
-		// Compile the fragment shader
-		glCompileShader(fragmentShader);
-
-		glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &isCompiled);
-		if (isCompiled == GL_FALSE)
-		{
-			GLint maxLength = 0;
-			glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &maxLength);
-
-			// The maxLength includes the NULL character
-			std::vector<GLchar> infoLog(maxLength);
-			glGetShaderInfoLog(fragmentShader, maxLength, &maxLength, &infoLog[0]);
-
-			// We don't need the shader anymore.
-			glDeleteShader(fragmentShader);
-			// Either of them. Don't leak shaders.
-			glDeleteShader(vertexShader);
-
-			APP_WMS_CORE_ERROR("{0}", infoLog.data());
-			return;
+	Ref<Shader> Shader::create(const std::string& fileName,
+		const std::string& vertexSource, const std::string& fragmentSource)
+	{
+		switch (Renderer::getRenderer()) {
+		case RendererAPI::SelectRenderer::None: APP_WMS_CORE_ASSERTS(false, "Renderer is None");
+		case RendererAPI::SelectRenderer::OpenGL: return std::make_shared< OpenGLShader>(fileName,
+			vertexSource, fragmentSource);
 		}
-
-		// Vertex and fragment shaders are successfully compiled.
-		// Now time to link them together into a program.
-		// Get a program object.
-		pm_renderID = glCreateProgram();
-
-		// Attach our shaders to our program
-		glAttachShader(pm_renderID, vertexShader);
-		glAttachShader(pm_renderID, fragmentShader);
-
-		// Link our program
-		glLinkProgram(pm_renderID);
-
-		// Note the different functions here: glGetProgram* instead of glGetShader*.
-		GLint isLinked = 0;
-		glGetProgramiv(pm_renderID, GL_LINK_STATUS, (int*)&isLinked);
-		if (isLinked == GL_FALSE)
-		{
-			GLint maxLength = 0;
-			glGetProgramiv(pm_renderID, GL_INFO_LOG_LENGTH, &maxLength);
-
-			// The maxLength includes the NULL character
-			std::vector<GLchar> infoLog(maxLength);
-			glGetProgramInfoLog(pm_renderID, maxLength, &maxLength, &infoLog[0]);
-
-			// We don't need the program anymore.
-			glDeleteProgram(pm_renderID);
-			// Don't leak shaders either.
-			glDeleteShader(vertexShader);
-			glDeleteShader(fragmentShader);
-
-			APP_WMS_CORE_ERROR("{0}", infoLog.data());
-			return;
-		}
-
-		// Always detach shaders after a successful link.
-		glDetachShader(pm_renderID, vertexShader);
-		glDetachShader(pm_renderID, fragmentShader);
+		APP_WMS_CORE_ASSERTS(false, "Unknown renderer");
+		return nullptr;
 	}
 
-	Shader::~Shader()
-	{
-		glDeleteProgram(pm_renderID);
+
+
+
+	// ShaderLib --------------------------------------
+	void ShaderLib::add(const Ref<Shader>& shader) {
+		const std::string& fileName = shader->get_fileName();
+		addAs(fileName, shader);
 	}
 
-	void Shader::bind() const
+	void ShaderLib::addAs(const std::string& custom_fileName, const Ref<Shader>& shader)
 	{
-		glUseProgram(pm_renderID);
+		APP_WMS_CORE_ASSERTS(!exist_fileName(custom_fileName), "shader file name already exists!");
+		pm_fileName_shader_data[custom_fileName] = shader;
 	}
 
-	void Shader::unbind() const
-	{
-		glUseProgram(0);
+	Ref<Shader> ShaderLib::load(const std::string& filePath) {
+		Ref<Shader> shader =  Shader::create(filePath);
+		add(shader);
+		return shader;
 	}
-	void Shader::uploadUniformMatrix(const std::string& name,const glm::mat4& mat)
-	{
-		GLint location = glGetUniformLocation(pm_renderID, name.c_str());
-		// f : float, v: vector >> float vector  >> ~fv
-		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
 
+	Ref<Shader> ShaderLib::load(const std::string& name, const std::string& filePath) {
+		Ref<Shader> shader = Shader::create(filePath);
+		addAs(name, shader);
+		return shader;
 	}
-	void Shader::uploadUniformFloat4(const std::string& name, const glm::vec4& values)
-	{
-		GLint location = glGetUniformLocation(pm_renderID, name.c_str());
-		glUniform4f(location, values.x, values.y, values.z, values.w);
 
+	Ref<Shader> ShaderLib::getShader(const std::string& name) {
+		APP_WMS_CORE_ASSERTS(exist_fileName(name), "shader file name doesn't exist!");
+		return pm_fileName_shader_data[name];
+	}
+
+	bool ShaderLib::exist_fileName(const std::string& fileName) const{
+		// pm_fileName_shader_data.find(fileName) is the 
+		// std::unordered_map<std::string, std::shared_ptr<Shader>>::iterator
+
+		// if fileName doesn't exist, find("") returns pm_fileName_shader_data.end()
+		return pm_fileName_shader_data.find(fileName) != pm_fileName_shader_data.end();
 	}
 }

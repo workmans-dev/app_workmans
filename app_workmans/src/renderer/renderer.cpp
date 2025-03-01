@@ -1,23 +1,38 @@
 #include "pch.h"
 #include "renderer/renderer.h"
+#include "openGL/openGLShader.h"
+#include "renderer/renderer2D.h"
 
 namespace AppWMs {
-	Renderer::SceneData* Renderer::pm_sceneData = new Renderer::SceneData;
+	Scope<Renderer::SceneData> Renderer::pm_sceneData = std::make_unique<Renderer::SceneData>();
 
-	void Renderer::beginScene(Camera& camera)
+	void Renderer::init()
 	{
-		pm_sceneData->view_proj_mat = camera.get_pm_view_proj_mat();
+		RendererCommand::init();
+		Renderer2D::init();
 	}
+
+	void Renderer::onWindowResize(uint32_t w, uint32_t h)
+	{
+		RendererCommand::set_viewport(0, 0, w, h);
+	}
+
+	void Renderer::beginScene(const CameraMatrix& camera)
+	{
+		pm_sceneData->view_proj_mat = camera.get_projection();
+	}
+
 	void Renderer::submit(const Ref<VertexArray>& vertexArray, const Ref<Shader> shader,
 		const glm::mat4& transform)
 	{
 		shader->bind();
-		shader->uploadUniformMatrix("u_view_proj", pm_sceneData->view_proj_mat);
-		shader->uploadUniformMatrix("u_transform", transform);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_view_proj", pm_sceneData->view_proj_mat);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_transform", transform);
 		vertexArray->bind();
 		RendererCommand::drawIndexed(vertexArray);
 	}
 	void Renderer::end()
+		
 	{
 	}
 }

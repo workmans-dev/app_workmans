@@ -35,7 +35,7 @@ namespace AppWMs {
 			EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryMouse);
 			//// ----- end
 		private:
-			float m_xScroll, m_yScroll;
+			float m_xScroll, m_yScroll=1.0f;
 	};
 
 	class  MouseButtonEvent :public Event {

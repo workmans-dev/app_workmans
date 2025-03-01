@@ -4,7 +4,6 @@ namespace AppWMs {
 	class Timer {
 	public:
 		Timer(float time=0.0f) :pm_time(time) {
-
 		}
 		float getTime_sec() const{
 			return pm_time;
@@ -19,5 +18,6 @@ namespace AppWMs {
 	private:
 		float pm_time;
 	};
+
 	
 }

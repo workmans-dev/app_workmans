@@ -1,23 +1,25 @@
 #pragma once
-#include "core.h"
+#include "core/core.h"
 
 
 namespace AppWMs {
 	class Texture {
 	public:
 		virtual ~Texture() = default;
+
 		virtual uint32_t getWidth() const = 0;
 		virtual uint32_t getHeight() const = 0;
-
+		virtual uint32_t get_renderID() const = 0;
 		virtual void bind(uint32_t slot=0) const = 0;
-
+		virtual void setData(void* data, uint32_t size) = 0;
+		virtual bool operator==(const Texture& other) const = 0;
 	};
 
-	class Texture2D :public Texture{
+	class Texture2D :public Texture {
 	public:
-		virtual ~Texture2D(){}
+		static Ref<Texture2D> create(uint32_t w, uint32_t h);
+
 		static Ref<Texture2D> create(const std::string& path);
 
-		
-	}
-}
+	};
+};

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "core.h"
+#include "core/core.h"
 
 #include "openGL/openGLVertexArray.h"
 #include <glad/glad.h>
@@ -29,40 +29,47 @@ namespace AppWMs {
 
 	OpenGLVertexArray::OpenGLVertexArray()
 	{
+		APP_WMS_PROFILE_FUNC();
 		glCreateVertexArrays(1, &pm_renderID);
 	}
 
 	OpenGLVertexArray::~OpenGLVertexArray()
 	{
+		APP_WMS_PROFILE_FUNC();
 		glDeleteVertexArrays(1, &pm_renderID);
 	}
 
 	void OpenGLVertexArray::bind() const
 	{
+		APP_WMS_PROFILE_FUNC();
 		glBindVertexArray(pm_renderID);
 	}
 
 	void OpenGLVertexArray::unbind() const
 	{
+		APP_WMS_PROFILE_FUNC();
 		glBindVertexArray(0);
 	}
 	void OpenGLVertexArray::addVertexBuffer(const Ref<VertexBuffer> vertexBuffer)
 	{
+		APP_WMS_PROFILE_FUNC();
 		glBindVertexArray(pm_renderID);
 		vertexBuffer->bind();
 		uint32_t index = 0;
 		for (const BufferElements& e : vertexBuffer->getLayout()) {
 			glEnableVertexAttribArray(index);
+			const void* ptr = reinterpret_cast<const void*>(static_cast<uintptr_t>(e.offset));
 			glVertexAttribPointer(index, e.getComponentCount(),
 				ShaderDataTypeToOpenGLBaseType(e.shaderDataType),
 				e.normalized ? GL_TRUE : GL_FALSE,
-				vertexBuffer->getLayout().getStride(), (const void*)e.offset);
+				vertexBuffer->getLayout().getStride(), ptr);
 			index++;
 		}
 		pm_vertexBuffers.push_back(vertexBuffer);
 	}
 	void OpenGLVertexArray::setIndexBuffer(const Ref<IndexBuffer> indexBuffer)
 	{
+		APP_WMS_PROFILE_FUNC();
 		glBindVertexArray(pm_renderID);
 		indexBuffer->bind();
 		pm_indexBuffer = indexBuffer;

@@ -8,23 +8,18 @@ namespace AppWMs {
 	VertexArray::~VertexArray()
 	{
 	}
-	void VertexArray::bind() const
-	{
-	}
-	void VertexArray::unbind() const
-	{
-	}
+
 	void VertexArray::addVertexBuffer(const Ref<VertexBuffer> vertexBuffer)
 	{
 	}
 	void VertexArray::setIndexBuffer(const Ref<IndexBuffer> indexBuffer)
 	{
 	}
-	VertexArray* VertexArray::create()
+	Ref<VertexArray> VertexArray::create()
 	{
 		switch (Renderer::getRenderer()) {
 		case RendererAPI::SelectRenderer::None: APP_WMS_CORE_ASSERTS(false, "Renderer is None");
-		case RendererAPI::SelectRenderer::OpenGL: return new OpenGLVertexArray();
+		case RendererAPI::SelectRenderer::OpenGL: return std::make_shared<OpenGLVertexArray>();
 		}
 		APP_WMS_CORE_ASSERTS(false, "Unknown renderer");
 		return nullptr;
