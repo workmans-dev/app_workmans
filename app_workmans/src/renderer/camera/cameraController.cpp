@@ -16,6 +16,7 @@ namespace AppWMs {
 	{
 	}
 
+
 	void CameraController::onUpdate(Timer ts)
 	{
 		auto& transform = getComponent<TransformComponent>().transform;
