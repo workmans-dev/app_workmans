@@ -59,24 +59,26 @@ namespace AppWMs {
 
 		
 		auto group = pm_register.view<TransformComponent, CameraMatrixComponent>();
-		CameraMatrix* main_camMat=nullptr;
-		glm::mat4* main_cam_transform = nullptr;
+		SceneCamera* main_camMat=nullptr;
+		glm::mat4 main_cam_transform;
+		bool block;
 		for (auto& entity : group) {
 			auto [transform_fromComp, cameraMat_fromComp] = 
 				group.get<TransformComponent, CameraMatrixComponent>(entity);
 			if (cameraMat_fromComp.primary==true) {
-				main_cam_transform = &transform_fromComp.transform;
+				main_cam_transform = transform_fromComp.getTransform();
 				main_camMat = &cameraMat_fromComp.sceneCam;
 				break;
 			}
 		}
 
 		if (main_camMat != nullptr) {
-			Renderer2D::beginScene(*main_camMat, *main_cam_transform);
+
+			Renderer2D::beginScene(*main_camMat, main_cam_transform);
 			auto group = pm_register.group<TransformComponent>(entt::get<ShadingComponent>);
-			for (auto& e_ID : group) {
+			for (auto e_ID : group) {
 				auto [transform, shading] = group.get<TransformComponent, ShadingComponent>(e_ID);
-				Renderer2D::drawQuad(transform, shading.color);
+				Renderer2D::drawQuad(transform.getTransform(), shading.color);
 				//Renderer2D::drawQuad_texture("texture", transform, pm_checker_tex_ptr,
 				//	{ 1.0f, 1.0f, 1.0f, 1.0f }, 10.0f);
 				//Renderer2D::drawQuad_texture("texture", transform_icon, pm_icon_tex_ptr);

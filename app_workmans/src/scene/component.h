@@ -1,7 +1,7 @@
 #pragma once
 #include "renderer/camera/sceneCamera.h"
 #include "scene/scriptable_entity.h"
-
+#include "core/core.h"
 namespace AppWMs {
 	struct TagComponent {
 		std::string name;
@@ -13,11 +13,25 @@ namespace AppWMs {
 
 
 	struct TransformComponent {
-		glm::mat4 transform = glm::mat4(1.0f);
+		glm::vec3 translate = { 0.0f, 0.0f , 0.0f };
+		glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
+		glm::vec3 rotate = { 0.0f , 0.0f , 0.0f };
+
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
-		TransformComponent(const glm::mat4& transform) :transform(transform) {};
-		operator const glm::mat4& () const { return transform; }
+		TransformComponent(const glm::vec3& pos) :translate(pos) {}
+		
+		glm::mat4 getTransform() const{
+			glm::vec3 rotate_radians = glm::radians(rotate);// radians 1.0 = dgree 360
+
+			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), rotate_radians.x, { 1,0,0 })*
+				glm::rotate(glm::mat4(1.0f), rotate_radians.y, { 0,1,0 }) *
+				glm::rotate(glm::mat4(1.0f), rotate_radians.z, { 0,0,1 });
+			
+			return glm::translate(glm::mat4(1.0f), translate) *
+				rotation *
+				glm::scale(glm::mat4(1.0f), scale);
+		}
 	};
 
 	struct ShadingComponent {

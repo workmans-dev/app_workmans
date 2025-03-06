@@ -60,7 +60,6 @@ namespace AppWMs {
 
 	void Viewport::onImGuiRender()
 	{
-
         static bool dockSpace_open = true;
         static bool opt_fullscreen = true;
         static bool opt_padding = false;

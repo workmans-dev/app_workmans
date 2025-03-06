@@ -1,15 +1,65 @@
 #include "pch.h"
 #include <imgui/imgui.h>
+#include <imGui/imgui_internal.h>
 #include "sceneProperty.h"
 #include "scene/component.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <ranges>
 
 namespace AppWMs {
 
+	static void DrawVec3(const std::string& label, glm::vec3& values, float resetValue=0.0f, float columnWidth=100.0f) {
+		ImGui::PushID(label.c_str());
+		ImGui::Columns(2);
+		ImGui::SetColumnWidth(0, columnWidth);
+		ImGui::Text(label.c_str());
+		ImGui::NextColumn();
 
+		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0,0 });
+
+		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		int i = 0;
+
+		std::array<const char*,3> translate_comp { "X", "Y", "Z"};
+		std::array<float*, 3> values_comp { &values.x, &values.y, &values.z };
+		std::array<ImVec4, 3> RGB{ ImVec4(0.78f, 0.25f, 0.15f, 1.0f),
+			ImVec4(0.3f, 0.78f, 0.2f, 1.0f),
+			ImVec4(0.3f, 0.4f, 0.9f, 1.0f) };
+		auto keyIt = translate_comp.begin();
+		auto valueIt = values_comp.begin();
+		auto colorIt = RGB.begin();
+
+		while (keyIt != translate_comp.end() && valueIt != values_comp.end()) {
+			ImGui::PushStyleColor(ImGuiCol_Text, *colorIt);
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(.25f, .25f, .25f, 1.0f));
+
+			if (ImGui::Button(*keyIt, buttonSize)) 
+				**valueIt = resetValue;
+			ImGui::PopStyleColor(2);
+
+			char hash_label[32];
+			snprintf(hash_label, sizeof(hash_label), "##%s", *keyIt);
+			ImGui::SameLine();
+			ImGui::DragFloat(hash_label , *valueIt, 0.01f);
+			ImGui::PopItemWidth();
+			if (i <2)
+				ImGui::SameLine();
+			++keyIt;
+			++valueIt;
+			++colorIt;
+			++i;
+		}
+		
+
+		ImGui::PopStyleVar();
+		ImGui::Columns(1);
+		ImGui::PopID();
+	}
 
 	SceneProperties::SceneProperties(const Ref<Scene>& scene):pm_scene(scene)
 	{
@@ -56,22 +106,24 @@ namespace AppWMs {
 			}
 			ImGui::Separator();
 		}
+
 		if (entity.hasComponent<TransformComponent>()) {
 			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.14f, 0.16f, 0.14f, 1.0f));
-
 			if (ImGui::TreeNodeEx("Translate", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
 				// Child frame for the DragFloat3
-				ImGui::BeginChild("TranslateGroup", ImVec2(0, 20), ImGuiChildFlags_AutoResizeX|ImGuiChildFlags_AutoResizeY,
+				ImGui::BeginChild("TranslateGroup", ImVec2(0, 70), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY,
 					ImGuiWindowFlags_NoScrollbar);
-				auto& transform = entity.getComponent<TransformComponent>().transform;
-				ImGui::DragFloat3("##Translate", glm::value_ptr(transform[3]), 0.1f);
+				auto& transComp = entity.getComponent<TransformComponent>();
+				DrawVec3("Translate", transComp.translate);
+				DrawVec3("Rotate", transComp.rotate);
+				DrawVec3("Scale", transComp.scale, 1.0f);
+				//ImGui::DragFloat3("trans", glm::value_ptr(translate), 0.01f);
 				ImGui::EndChild();
 				ImGui::TreePop();  // Pop the collapsible group
 			}
 			ImGui::PopStyleColor();
-
-
 		}
+
 		if (entity.hasComponent<CameraMatrixComponent>()) {
 			auto& camera = entity.getComponent<CameraMatrixComponent>();
 			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.14f, 0.16f, 0.14f, 1.0f));
@@ -131,8 +183,6 @@ namespace AppWMs {
 				ImGui::TreePop();  // Pop the collapsible group
 			}
 			ImGui::PopStyleColor();
-
-
 		}
 
 		if (entity.hasComponent<ShadingComponent>()) {
