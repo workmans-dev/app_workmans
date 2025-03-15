@@ -5,7 +5,7 @@
 #include "core/layer.h"
 #include "core/log.h"
 #include "imGui/imGuiLayer.h"
-#include "core/windowInput.h"
+#include "GLFWwindow/windowInput.h"
 
 
 // rederer 

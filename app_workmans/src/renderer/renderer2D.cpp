@@ -80,6 +80,7 @@ namespace AppWMs {
 		// create shape
 		pm_renderer_comp_data->vertexArray_ptr->bind();
 		RendererCommand::drawIndexed(pm_renderer_comp_data->vertexArray_ptr);
+		pm_renderer_comp_data->vertexArray_ptr->unbind();
 	}
 	void Renderer2D::drawQuad_texture(const std::string& fileName, const glm::mat4& transform,
 		const Ref<Texture2D>& tex_ptr, const glm::vec4& tintColor,float tiling)

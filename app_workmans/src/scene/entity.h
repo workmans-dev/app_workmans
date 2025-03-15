@@ -7,18 +7,22 @@ namespace AppWMs {
 	class Entity {
 	public:
 		Entity(const entt::entity& entityHandle, Scene* scene);
-		Entity(const Entity& other)=default;
+		Entity(const Entity& other);
 		Entity()=default;
 
 		template <typename T, typename... Args>
 		T& addComponent(Args&&... args) {
-
-			return pm_scene->pm_register.emplace<T>(pm_entityHandle,
-				std::forward<Args>(args)...);
+			T& comp = pm_scene->pm_register.emplace<T>(pm_entityHandle,std::forward<Args>(args)...);
+			pm_scene->componentAdded<T>(*this, comp);
+			return comp;
 		}
 
 		template<typename T>
 		T& getComponent() {
+			return pm_scene->pm_register.get<T>(pm_entityHandle);
+		}
+		template<typename T>
+		T& getComponent() const {
 			return pm_scene->pm_register.get<T>(pm_entityHandle);
 		}
 
@@ -28,22 +32,44 @@ namespace AppWMs {
 		}
 
 		template<typename T>
+		bool hasComponent() const {
+			return pm_scene->pm_register.all_of<T>(pm_entityHandle);
+		}
+
+
+		template<typename T>
 		void removeComponent() {
 
 			return pm_scene->pm_register.remove<T>(pm_entityHandle);
 		}
 		
+		entt::entity get_entityID() const { return pm_entityHandle; }
+
 		operator bool() const { return pm_entityHandle != entt::null; }
 		operator uint32_t() const { return (uint32_t)pm_entityHandle; }
 		bool operator == (const Entity& other) const {
 			return pm_entityHandle == other.pm_entityHandle &&
 				pm_scene == other.pm_scene;}
 		bool operator != (const Entity& other) const {
-			return !(*this == other);
+			return !(*this == other);}
+		operator entt::entity() const { return pm_entityHandle; }
+		bool operator()(const Entity& lhs, const Entity& rhs) const {
+			return lhs.pm_entityHandle < rhs.pm_entityHandle;  // Example comparison logic
 		}
+		bool operator<(const Entity& other) const {
+			return pm_entityHandle < other.pm_entityHandle;  // For example, compare based on 'id'
+		}
+
 	private:
 		Scene* pm_scene=nullptr;
 		entt::entity pm_entityHandle{entt::null};
 		
+	};
+
+
+	struct EntityComparator {
+		bool operator()(const Entity& lhs, const Entity& rhs) const {
+			return lhs.get_entityID() < rhs.get_entityID();  // Or any other unique property for comparison
+		}
 	};
 }

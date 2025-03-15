@@ -18,9 +18,7 @@ namespace AppWMs {
 		void onDestroy();
 		void onUpdate(Timer ts);
 		void onEvent(Event& e);
-		bool resizeWindow(WindowResizeEvent& e);
-		bool mouseScroll(MouseScrollEvent& e);
-		void resizeRatio(uint32_t w, uint32_t h);
+
 
 
 	private:

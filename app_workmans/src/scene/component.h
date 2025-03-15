@@ -3,12 +3,23 @@
 #include "scene/scriptable_entity.h"
 #include "core/core.h"
 namespace AppWMs {
+
 	struct TagComponent {
 		std::string name;
+		std::string typeName = "TagComponent";
+		bool nameEditable = true;
 		TagComponent() = default;
 		TagComponent(const std::string& name) :name(name) {};
 		TagComponent(const TagComponent&)= default;
 
+	};
+
+	struct VisComponent {
+		int visible = true;
+		std::string typeName = "VisComponent";
+		VisComponent(const int& v) :visible(v) {};
+		VisComponent(const VisComponent& other) :visible(other.visible) {};
+		VisComponent()  = default;
 	};
 
 
@@ -16,11 +27,14 @@ namespace AppWMs {
 		glm::vec3 translate = { 0.0f, 0.0f , 0.0f };
 		glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
 		glm::vec3 rotate = { 0.0f , 0.0f , 0.0f };
+		std::string typeName = "TransformComponent";
 
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
 		TransformComponent(const glm::vec3& pos) :translate(pos) {}
-		
+		TransformComponent(const glm::vec3& pos, const glm::vec3& rot,
+			const glm::vec3& sc) :translate(pos), rotate(rot), scale(sc) {}
+
 		glm::mat4 getTransform() const{
 			glm::vec3 rotate_radians = glm::radians(rotate);// radians 1.0 = dgree 360
 
@@ -36,21 +50,26 @@ namespace AppWMs {
 
 	struct ShadingComponent {
 		glm::vec4 color{ 0.0f, 1.0f, 1.0f , 1.0f };
+		std::string typeName = "ShadingComponent";
+
 		ShadingComponent() = default;
 		ShadingComponent(const ShadingComponent&) = default;
 		ShadingComponent(const glm::vec4& color) :color(color) {};
 	};
 
 	struct CameraMatrixComponent {
+		std::string typeName = "CameraMatrixComponent";
 		SceneCamera sceneCam;
-		//std::string& camType= sceneCam.get_camType();
-		bool primary = true;
+		bool primary = false;
 		bool fixed_aspectRatio = false;
+		bool defaultCam = false;
 		CameraMatrixComponent() = default;
 		CameraMatrixComponent(const CameraMatrixComponent&) = default;
 	};
 
 	struct NativeScriptComponent {
+		std::string typeName = "NativeScriptComponent";
+
 		ScriptableEntity* scriptable_entt_ptr = nullptr;
 		float x = 0.0f, y = 0.0f;
 		std::function<void()> instantiate_func;

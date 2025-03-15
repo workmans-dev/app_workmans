@@ -9,9 +9,9 @@ namespace AppWMs {
 		pm_entityHandle(entityHandle), pm_scene(scene)
 	{
 	}
-	//Entity::Entity(const Entity& other):pm_entityHandle(other.pm_entityHandle),
-	//	pm_scene(other.pm_scene)
-	//{
-	//}
+	Entity::Entity(const Entity& other):pm_entityHandle(other.pm_entityHandle),
+		pm_scene(other.pm_scene)
+	{
+	}
 
 }

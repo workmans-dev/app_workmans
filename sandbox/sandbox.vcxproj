@@ -137,13 +137,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\mainWindow.h" />
     <ClInclude Include="src\panels\sceneProperty.h" />
-    <ClInclude Include="src\viewport.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\sandbox.cpp" />
+    <ClCompile Include="src\mainWindow.cpp" />
     <ClCompile Include="src\panels\sceneProperty.cpp" />
-    <ClCompile Include="src\viewport.cpp" />
+    <ClCompile Include="src\sandbox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\app_workmans\app_workmans.vcxproj">

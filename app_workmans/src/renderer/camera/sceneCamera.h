@@ -49,16 +49,16 @@ namespace AppWMs {
 		void set_orthographic(const float& size, const float& nearClip, const float& farClip);
 		void set_persp(const float& persp_FOV, const float& nearClip, const float& farClip);
 
-		const float& get_ortho_size() { return pm_ortho_size; }
-		const float& get_ortho_nearClip() { return pm_ortho_nearClip; }
-		const float& get_ortho_farClip() { return pm_ortho_farClip; }
+		float get_ortho_size() { return pm_ortho_size; }
+		float get_ortho_nearClip() { return pm_ortho_nearClip; }
+		float get_ortho_farClip() { return pm_ortho_farClip; }
 		void set_ortho_size(const float& size) { pm_ortho_size=size; reset_proj_mat();}
 		void set_ortho_nearClip(const float& nearClip) {pm_ortho_nearClip = nearClip; reset_proj_mat();}
 		void set_ortho_farClip(const float& farClip) { pm_ortho_farClip = farClip; reset_proj_mat();}
 
-		const float& get_persp_FOV() { return pm_persp_FOV; }
-		const float& get_persp_nearClip() { return pm_persp_nearClip; }
-		const float& get_persp_farClip() { return pm_persp_farClip; }
+		float get_persp_FOV() { return pm_persp_FOV; }
+		float get_persp_nearClip() { return pm_persp_nearClip; }
+		float get_persp_farClip() { return pm_persp_farClip; }
 		void set_persp_FOV(const float& persp_FOV) { pm_persp_FOV = persp_FOV; reset_proj_mat(); }
 		void set_persp_nearClip(const float& nearClip) { pm_persp_nearClip = nearClip; reset_proj_mat();}
 		void set_persp_farClip(const float& farClip) { pm_persp_farClip = farClip; reset_proj_mat();}

@@ -10,7 +10,7 @@ namespace AppWMs {
 		std::string title;
 		unsigned int w, h;
 		WindowProps(const std::string & title_in="APP_WORKMANs", 
-			unsigned int width_in = 1280, unsigned int height_in = 720):w(width_in), h(height_in), title(title_in){}
+			unsigned int width_in = 1600, unsigned int height_in = 900):w(width_in), h(height_in), title(title_in){}
 	};
 
 	class  Window

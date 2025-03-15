@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "core/windowInput.h"
+#include "GLFWwindow/windowInput.h"
 #include "core/application.h"
 
 #include <GLFW/glfw3.h>

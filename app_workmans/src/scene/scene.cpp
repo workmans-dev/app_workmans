@@ -4,6 +4,7 @@
 
 #include <glm/glm.hpp>
 #include "scene/component.h"
+#include "renderer/camera/cameraController.h"
 #include "renderer/renderer2D.h"
 
 
@@ -21,9 +22,10 @@ namespace AppWMs {
 
 	Scene::Scene()
 	{
-		// texture ponters define
-		pm_checker_tex_ptr = Texture2D::create("assets/textures/checkerBoard_1.png");
-		pm_icon_tex_ptr = Texture2D::create("assets/textures/WORKMANs_icon_69.png");
+		//// texture ponters define
+		//pm_checker_tex_ptr = Texture2D::create("assets/textures/checkerBoard_1.png");
+		//pm_icon_tex_ptr = Texture2D::create("assets/textures/WORKMANs_icon_69.png");
+				// default cam entities.
 	}
 
 	Scene::~Scene()
@@ -33,17 +35,38 @@ namespace AppWMs {
 	Entity Scene::createEntity(const std::string& name){
 		Entity E = { pm_register.create(), this };
 		E.addComponent<TransformComponent>();
+		E.addComponent<VisComponent>(1);
 		auto& tagC = E.addComponent<TagComponent>(name);
 		tagC.name = name.empty() ? "Entity" : name;
-		
-
 		return E;
 	}
 
+	void Scene::deletEntity(const Entity& entity)
+	{
+
+		auto itr = std::find_if(pm_cameraViewArray.begin(), pm_cameraViewArray.end(),
+			[&entity](const std::string& Name) {return Name == entity.getComponent<TagComponent>().name;
+			});
+		if(itr != pm_cameraViewArray.end())
+			pm_cameraViewArray.erase(itr);
+
+		// Remove the entity from pm_cam_entities
+		auto it_ = std::find_if(pm_cam_entities.begin(), pm_cam_entities.end(),
+			[&entity](const Entity& e) {  return e.get_entityID() == entity.get_entityID(); });
+
+		if (it_ != pm_cam_entities.end()) {
+			pm_cam_entities.erase(it_);
+		}
+
+		// Now destroy the entity in the registry
+		pm_register.destroy(entity.get_entityID());
+
+
+	}
 
 	void Scene::onUpdate(Timer ts) {
 
-		// camera, // getting pm_camMat_entt from pm_register <--- viewport
+		// cameraController entity  <----- pm_register <--- viewport
 		pm_register.view<NativeScriptComponent>().each([=](auto entity, auto& nativeScriptComp)
 		{
 			if (!nativeScriptComp.scriptable_entt_ptr)
@@ -57,25 +80,24 @@ namespace AppWMs {
 			}
 		});
 
-		
-		auto group = pm_register.view<TransformComponent, CameraMatrixComponent>();
+		// camera component
+		auto group = pm_register.view<TransformComponent, CameraMatrixComponent, TagComponent>();
 		SceneCamera* main_camMat=nullptr;
 		glm::mat4 main_cam_transform;
-		bool block;
 		for (auto& entity : group) {
-			auto [transform_fromComp, cameraMat_fromComp] = 
-				group.get<TransformComponent, CameraMatrixComponent>(entity);
+			auto [transform_fromComp, cameraMat_fromComp, tagComp] = 
+				group.get<TransformComponent, CameraMatrixComponent, TagComponent>(entity);
 			if (cameraMat_fromComp.primary==true) {
 				main_cam_transform = transform_fromComp.getTransform();
 				main_camMat = &cameraMat_fromComp.sceneCam;
 				break;
 			}
 		}
-
+		// rendering
 		if (main_camMat != nullptr) {
 
 			Renderer2D::beginScene(*main_camMat, main_cam_transform);
-			auto group = pm_register.group<TransformComponent>(entt::get<ShadingComponent>);
+			auto group = pm_register.view<TransformComponent, ShadingComponent>();
 			for (auto e_ID : group) {
 				auto [transform, shading] = group.get<TransformComponent, ShadingComponent>(e_ID);
 				Renderer2D::drawQuad(transform.getTransform(), shading.color);
@@ -88,13 +110,82 @@ namespace AppWMs {
 
 	}
 
+	void Scene::onAttach()
+	{
+		add_camMat_entt("perspective", SceneCamera::CameraProjType::perspective, true);
+		add_camMat_entt("top", SceneCamera::CameraProjType::orthographic, true);
+		add_camMat_entt("front", SceneCamera::CameraProjType::orthographic, true);
+		add_camMat_entt("side", SceneCamera::CameraProjType::orthographic, true);
+	}
+
 	void Scene::resizeView(uint32_t w, uint32_t h) {
+		pm_viewport_w = w;
+		pm_viewport_h = h;
 		auto camera_entts = pm_register.view<CameraMatrixComponent>();
 		for (auto& camera_entity : camera_entts) {
 			auto& camComp = camera_entts.get<CameraMatrixComponent>(camera_entity);
 			if(!camComp.fixed_aspectRatio)
 				camComp.sceneCam.set_proj_mat(w, h);
 		}
+
+	}
+
+
+	void Scene::add_camMat_entt(const std::string& entt_tagName, SceneCamera::CameraProjType type,
+		bool defaultCam)
+	{
+		Entity camMat_entt = createEntity(entt_tagName);
+		auto& camMat_comp = camMat_entt.addComponent<CameraMatrixComponent>();
+		camMat_entt.addComponent<NativeScriptComponent>().bind<CameraController>();
+		pm_cam_entities.emplace_back(camMat_entt);
+		// set cam projtion type!!!
+		camMat_comp.sceneCam.set_camProjType(type);
+		pm_cameraViewArray.emplace_back(entt_tagName);
+
+		if (type == SceneCamera::CameraProjType::perspective) {
+			camMat_comp.primary = true;
+			camMat_entt.getComponent<TransformComponent>().translate = { 0.0f,0.0f,10.0f };
+		}
+
+		if (defaultCam == false) {
+			camMat_comp.primary = true;
+		}
+		else {
+			auto& tagComp = camMat_entt.getComponent<TagComponent>();
+			tagComp.nameEditable = false;
+			auto& visComp = camMat_entt.getComponent<VisComponent>();
+			visComp.visible = false;
+		}
+		camMat_comp.defaultCam = defaultCam;
+
+	}
+
+	template<typename T>
+	void Scene::componentAdded(Entity& entity, T& comp) {
+		static_assert(false);
+	}
+	template<>
+	void Scene::componentAdded(Entity& entity, TransformComponent& comp) {
+
+	}
+	template<>
+	void Scene::componentAdded(Entity& entity, CameraMatrixComponent& comp) {
+		comp.sceneCam.set_proj_mat(pm_viewport_w, pm_viewport_h);
+	}
+	template<>
+	void Scene::componentAdded(Entity& entity, VisComponent& comp) {
+
+	}
+	template<>
+	void Scene::componentAdded(Entity& entity, TagComponent& comp) {
+
+	}
+	template<>
+	void Scene::componentAdded(Entity& entity, ShadingComponent& comp) {
+
+	}
+	template<>
+	void Scene::componentAdded(Entity& entity, NativeScriptComponent& comp) {
 
 	}
 }

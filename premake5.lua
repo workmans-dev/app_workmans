@@ -12,13 +12,15 @@ includeDir["ImGui"] = "app_workmans/vendor/imgui"
 includeDir["glm"] = "app_workmans/vendor/glm"
 includeDir["stb_image"] = "app_workmans/vendor/stb_image"
 includeDir["entt"] = "app_workmans/vendor/entt/include"
+includeDir["yaml_cpp"] = "app_workmans/vendor/yaml-cpp/include"
 
 
-
-include "app_workmans/vendor/GLFW"
-include "app_workmans/vendor/Glad"
-include "app_workmans/vendor/imgui"
-
+group "Dependencies"
+	include "app_workmans/vendor/GLFW"
+	include "app_workmans/vendor/Glad"
+	include "app_workmans/vendor/imgui"
+	include "app_workmans/vendor/yaml-cpp"
+group ""
 
 project "app_workmans"
 	location "app_workmans"
@@ -41,7 +43,9 @@ project "app_workmans"
 		"%{prj.name}/vendor/stb_image/**.cpp"
 	}
 	defines{
-		"_CRT_SECURE_NO_WARNINGS"
+		"_CRT_SECURE_NO_WARNINGS",
+		"GLFW_INCLUDE_NONE",
+		"YAML_CPP_STATIC_DEFINE"
 	}
 	includedirs{
 		"%{prj.name}/vendor/spdlog/include",
@@ -51,7 +55,8 @@ project "app_workmans"
 		"%{includeDir.ImGui}",
 		"%{includeDir.glm}",
 		"%{includeDir.stb_image}",
-		"%{includeDir.entt}"
+		"%{includeDir.entt}",
+		"%{includeDir.yaml_cpp}"
 	}
 
 	-- static lib link
@@ -59,15 +64,15 @@ project "app_workmans"
 		"GLFW",
 		"Glad",
 		"ImGui",
-		"opengl32.lib"
+		"opengl32.lib",
+		"yaml-cpp"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
 		defines{
 			"APP_WMS_PLATFORM_WINDOWS",
-			"APP_WMS_BUILD_DLL",
-			"GLFW_INCLUDE_NONE",
+			"APP_WMS_BUILD_DLL"
 		}
 		buildoptions { "/utf-8" } 
 

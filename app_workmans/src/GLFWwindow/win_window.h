@@ -1,5 +1,5 @@
 #pragma once
-#include "window.h"
+#include "core/window.h"
 
 #include "renderer/graphicContext.h"
 
