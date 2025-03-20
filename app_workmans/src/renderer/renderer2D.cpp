@@ -2,6 +2,9 @@
 #include "renderer/renderer2D.h"
 #include "openGL/openGLShader.h"
 #include "renderer/rendererCommand.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
 
 namespace AppWMs {
 	Scope<Renderer2D::Renderer_comp_data>Renderer2D::pm_renderer_comp_data =
@@ -53,10 +56,11 @@ namespace AppWMs {
 
 
 
-	void Renderer2D::beginScene(const CameraMatrix& camMat, const glm::mat4& transform)
+	void Renderer2D::beginScene(const CameraController& cam, const glm::mat4& transform)
 	{
 		APP_WMS_PROFILE_FUNC();
-		const glm::mat4& view_proj_mat = camMat.get_projection()* glm::inverse(transform);
+		glm::mat4 view_proj_mat = cam.get_projection() * glm::inverse(transform);
+
 		// rendering on camera
 		pm_renderer_comp_data->shader_ptr->bind();
 		pm_renderer_comp_data->shader_ptr->uploadUniformMat4("u_view_proj", view_proj_mat);

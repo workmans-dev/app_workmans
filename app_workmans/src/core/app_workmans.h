@@ -9,7 +9,6 @@
 
 
 // rederer 
-#include "renderer/camera/camera.h"
 #include "renderer/camera/cameraController.h"
 #include "renderer/camera/sceneCamera.h"
 #include "scene/scriptable_entity.h"

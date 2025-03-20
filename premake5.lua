@@ -13,6 +13,7 @@ includeDir["glm"] = "app_workmans/vendor/glm"
 includeDir["stb_image"] = "app_workmans/vendor/stb_image"
 includeDir["entt"] = "app_workmans/vendor/entt/include"
 includeDir["yaml_cpp"] = "app_workmans/vendor/yaml-cpp/include"
+includeDir["ImGuizmo"] = "app_workmans/vendor/ImGuizmo"
 
 
 group "Dependencies"
@@ -34,20 +35,30 @@ project "app_workmans"
 	pchheader "pch.h"
 	pchsource "%{prj.name}/src/pch.cpp"
 
-	files{
+
+
+
+	files
+	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl",
 		"%{prj.name}/vendor/stb_image/**.h",
-		"%{prj.name}/vendor/stb_image/**.cpp"
+		"%{prj.name}/vendor/stb_image/**.cpp",
+		"%{prj.name}/vendor/ImGuizmo/ImGuizmo.h",
+		"%{prj.name}/vendor/ImGuizmo/ImGuizmo.cpp"
 	}
-	defines{
+
+	defines
+	{
 		"_CRT_SECURE_NO_WARNINGS",
 		"GLFW_INCLUDE_NONE",
 		"YAML_CPP_STATIC_DEFINE"
 	}
-	includedirs{
+
+	includedirs
+	{
 		"%{prj.name}/vendor/spdlog/include",
 		"%{prj.name}/src",
 		"%{includeDir.GLFW}",
@@ -56,7 +67,9 @@ project "app_workmans"
 		"%{includeDir.glm}",
 		"%{includeDir.stb_image}",
 		"%{includeDir.entt}",
-		"%{includeDir.yaml_cpp}"
+		"%{includeDir.yaml_cpp}",
+		"%{includeDir.ImGuizmo}"
+
 	}
 
 	-- static lib link
@@ -67,6 +80,9 @@ project "app_workmans"
 		"opengl32.lib",
 		"yaml-cpp"
 	}
+
+	filter "files:app_workmans/vendor/ImGuizmo/**.cpp"
+    flags {"NoPCH"}
 
 	filter "system:windows"
 		systemversion "latest"
@@ -94,18 +110,25 @@ project "app_workmans"
 
 
 
+
+
+
+
+
 project "sandbox"
 	location "sandbox"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++20"
 	staticruntime "on"
+	startproject "sandbox"  -- Replace with your desired project name
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 
 	files{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+
 	}
 	includedirs{
 		"app_workmans/vendor/spdlog/include",
@@ -114,6 +137,7 @@ project "sandbox"
 		"%{includeDir.glm}",
 		"%{includeDir.entt}"
 	}
+
 	links{
 		"app_workmans"
 	}

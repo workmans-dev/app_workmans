@@ -1,9 +1,10 @@
 #pragma once
-#include "renderer/camera/camera.h"
+#include "renderer/camera/cameraController.h"
+
 
 namespace AppWMs {
 
-	class SceneCamera :public CameraMatrix {
+	class SceneCamera :public CameraController {
 	public:
 		enum class CameraProjType{ perspective = 0, orthographic = 1 };
 		// Method to convert CameraProjType enum to string
@@ -14,14 +15,6 @@ namespace AppWMs {
 			default: return "unknown";
 			}
 		}
-		// Method to return an array of const char* strings for camera types
-		//static const std::array<const char*, 5> getCameraProjTypes() {
-		//	return { CameraProjTypeToString(CameraProjType::left),
-		//			 CameraProjTypeToString(CameraProjType::right),
-		//			 CameraProjTypeToString(CameraProjType::bottom),
-		//			 CameraProjTypeToString(CameraProjType::top),
-		//			 CameraProjTypeToString(CameraProjType::perspective) };
-		//}
 
 		SceneCamera();
 		virtual ~SceneCamera() = default;
@@ -30,9 +23,8 @@ namespace AppWMs {
 		void reset_proj_mat();
 
 		const CameraProjType& get_camProjType() const { return pm_camType; }
-		void set_camProjType(const CameraProjType& type) { pm_camType = type; }
+		void set_camProjType(const CameraProjType& type);
 		inline std::string get_camProjTypeAsString() { return SceneCamera::CameraProjTypeToString(pm_camType); }
-	
 	private:
 		CameraProjType pm_camType = CameraProjType::perspective;
 		float pm_ortho_size = 20.0f;
@@ -41,14 +33,15 @@ namespace AppWMs {
 
 		float pm_aspectRatio = 0.0f;
 
-		float pm_persp_FOV = glm::radians(60.0f);
+		float pm_persp_FOV = glm::radians(30.0f);
 		float pm_persp_nearClip = 0.1f;
-		float pm_persp_farClip = 1000.0f;
+		float pm_persp_farClip = 10000.0f;
+
 
 	public:
 		void set_orthographic(const float& size, const float& nearClip, const float& farClip);
 		void set_persp(const float& persp_FOV, const float& nearClip, const float& farClip);
-
+		float get_as() { return pm_aspectRatio; }
 		float get_ortho_size() { return pm_ortho_size; }
 		float get_ortho_nearClip() { return pm_ortho_nearClip; }
 		float get_ortho_farClip() { return pm_ortho_farClip; }
@@ -62,5 +55,7 @@ namespace AppWMs {
 		void set_persp_FOV(const float& persp_FOV) { pm_persp_FOV = persp_FOV; reset_proj_mat(); }
 		void set_persp_nearClip(const float& nearClip) { pm_persp_nearClip = nearClip; reset_proj_mat();}
 		void set_persp_farClip(const float& farClip) { pm_persp_farClip = farClip; reset_proj_mat();}
+		
+
 	};
 }

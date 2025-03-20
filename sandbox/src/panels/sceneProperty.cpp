@@ -9,9 +9,10 @@
 
 #include <ranges>
 
+
 namespace AppWMs {
 	template<typename T, typename ui_buildFunc>
-	static void DrawComponent(const std::string& label, const Entity& entity, ui_buildFunc uiFunc, const int& componentCount) {
+	static void DrawComponent(const std::string& label, Entity& entity, ui_buildFunc uiFunc, const int& componentCount) {
 		if (entity.hasComponent<T>()) {
 			auto& comp = entity.getComponent<T>();
 			if (ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -131,20 +132,16 @@ namespace AppWMs {
 		}
 		ImGui::End();
 
-
 		ImGui::Begin("Property editor");
 		// If there are selected entities, show their properties
 		if (!pm_selectedEntities.empty()) {
-			showPropertyComponents(*pm_selectedEntities.begin());
-			for (const Entity& selectedEntity : pm_selectedEntities) {
-				set_deleteEntity(selectedEntity);
-			}
-		}
+			auto it = pm_selectedEntities.begin();
+			auto& e = const_cast<Entity&>(*it); // Fix: remove const qualifier
+			showPropertyComponents(e);
+			set_deleteEntity();}
 		ImGui::End();
+
 	}
-
-
-
 
 	void SceneProperties::setScene(const Ref<Scene>& scene)
 	{
@@ -153,11 +150,11 @@ namespace AppWMs {
 	}
 
 
-	void SceneProperties::showPropertyComponents(const Entity& entity)
+	void SceneProperties::showPropertyComponents( Entity& entity)
 	{
 		if (entity.hasComponent<TagComponent>()) {
 			char buffer[256];
-			auto& tagComp = entity.getComponent<TagComponent>();
+			TagComponent& tagComp = entity.getComponent<TagComponent>();
 			memset(buffer, 0, sizeof(buffer));
 			strcpy_s(buffer, sizeof(buffer), tagComp.name.c_str());
 			if (ImGui::InputText("Name", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue))
@@ -167,16 +164,16 @@ namespace AppWMs {
 			ImGui::Separator();
 		}
 
-		DrawComponent<TransformComponent>("Transform", entity, [](auto& transComp) {
+		DrawComponent<TransformComponent>("Transform", entity, [&](auto& transComp) {
 			DrawVec3("Translate", transComp.translate);
 			DrawVec3("Rotate", transComp.rotate);
 			DrawVec3("Scale", transComp.scale, 1.0f);
 			}, 3);
-		DrawComponent<VisComponent>("Visibility", entity, [](auto& visComp) {
+		DrawComponent<VisComponent>("Visibility", entity, [&](auto& visComp) {
 			DrawBool(visComp.visible);
 			}, 1);
 
-		DrawComponent<CameraMatrixComponent>("Camera", entity, [](auto& camera) {
+		DrawComponent<CameraMatrixComponent>("Camera", entity, [&](auto& camera) {
 			const char* cameraType[] = { "perspective", "orthographic" };
 			const char* currentCamereTypeString = cameraType[static_cast<int>(camera.sceneCam.get_camProjType())];
 			if (ImGui::BeginCombo("##Camera Type", currentCamereTypeString))
@@ -196,15 +193,15 @@ namespace AppWMs {
 				float farClip = camera.sceneCam.get_ortho_farClip();
 				ImGui::Text("OrthographicSize : ");
 				ImGui::SameLine();
-				if (ImGui::DragFloat("##size", &size, 0.001f))
+				if (ImGui::DragFloat("##size", &size))
 					camera.sceneCam.set_ortho_size(size);
 				ImGui::Text("NearClip : ");
 				ImGui::SameLine();
-				if (ImGui::DragFloat("##near", &nearClip, 0.001f))
+				if (ImGui::DragFloat("##near", &nearClip))
 					camera.sceneCam.set_ortho_nearClip(nearClip);
 				ImGui::Text("FarClip : ");
 				ImGui::SameLine();
-				if (ImGui::DragFloat("##far", &farClip, 0.001f))
+				if (ImGui::DragFloat("##far", &farClip))
 					camera.sceneCam.set_ortho_farClip(farClip);
 			}
 			else {
@@ -213,20 +210,20 @@ namespace AppWMs {
 				float farClip = camera.sceneCam.get_persp_farClip();
 				ImGui::Text("Perspective FOV : ");
 				ImGui::SameLine();
-				if (ImGui::DragFloat("##FOV", &FOV, 0.001f))
+				if (ImGui::DragFloat("##FOV", &FOV))
 					camera.sceneCam.set_persp_FOV(glm::radians(FOV));
 				ImGui::Text("NearClip : ");
 				ImGui::SameLine();
-				if (ImGui::DragFloat("##near", &nearClip, 0.001f))
+				if (ImGui::DragFloat("##near", &nearClip))
 					camera.sceneCam.set_persp_nearClip(nearClip);
 				ImGui::Text("FarClip : ");
 				ImGui::SameLine();
-				if (ImGui::DragFloat("##far", &farClip, 0.001f))
+				if (ImGui::DragFloat("##far", &farClip))
 					camera.sceneCam.set_persp_farClip(farClip);
 			}
 			}, 4);
 
-		DrawComponent<ShadingComponent>("Materials", entity, [](auto& comp) {
+		DrawComponent<ShadingComponent>("Materials", entity, [&](auto& comp) {
 			ImGui::ColorEdit4("Color", glm::value_ptr(comp.color));
 			}, 1);
 	}
@@ -278,19 +275,27 @@ namespace AppWMs {
 	}
 
 
-	void SceneProperties::set_deleteEntity(const Entity& entity)
+	void SceneProperties::set_deleteEntity()
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_Delete, false)) {
-			if (entity.hasComponent<CameraMatrixComponent>()) {
-				if (!entity.getComponent<CameraMatrixComponent>().defaultCam) {
-					pm_scene->deletEntity(entity);
+			for (auto it = pm_selectedEntities.begin(); it != pm_selectedEntities.end(); ) {
+
+				Entity& selectedEntity = const_cast<Entity&>(*it);
+
+				if (selectedEntity.hasComponent<CameraMatrixComponent>()) {
+					if (!selectedEntity.getComponent<CameraMatrixComponent>().defaultCam) {
+						pm_scene->deletEntity(selectedEntity);
+						it = pm_selectedEntities.erase(it);
+					}
+					else {
+						std::cout << "default camera can't be deleted" << std::endl;
+						++it; // Move forward safely
+					}
 				}
 				else {
-					std::cout << "default camera can't be deleted" << std::endl;
+					pm_scene->deletEntity(selectedEntity);
+					it = pm_selectedEntities.erase(it);
 				}
-			}
-			else {
-				pm_scene->deletEntity(entity);
 			}
 		}
 	}
@@ -307,7 +312,7 @@ namespace AppWMs {
 	{
 		if (pm_selectedEntities.size() > 0){
 			for (auto& e : pm_selectedEntities) {
-				auto& visComp = e.getComponent<VisComponent>();
+				auto& visComp = const_cast<Entity&>(e).getComponent<VisComponent>();
 				if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_H)) {
 					std::cout << "Shift+H Pressed!" << std::endl;
 					visComp.visible = false; // Ctrl+H hides

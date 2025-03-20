@@ -1,17 +1,28 @@
 #pragma once
-#include <glm/glm.hpp>
+#include "events/applicationEvent.h"
+#include "events/mouseEvent.h"
+#include "events/keyEvent.h"
+#include "events/keyCodes.h"
+#include "events/mouseCodes.h"
+
+#include "core/timer.h"
+#include "core/input.h"
+#include <glm/gtc/matrix_transform.hpp>
+
+
 
 namespace AppWMs {
 
 
-	class CameraMatrix {
+	class Camera {
 	public:
-		CameraMatrix()=default;
-		virtual ~CameraMatrix() = default;
-		CameraMatrix(const glm::mat4& projection) :m_proj_mat(projection) {}
-		const glm::mat4x4& get_projection() const { return m_proj_mat; }
+		Camera()=default;
+		virtual ~Camera() = default;
+		Camera(const glm::mat4& projection) :m_proj_mat(projection) {}
+		const glm::mat4& get_projection() const { return m_proj_mat; }
+		//void bind() { std::cout << "from Camera class" << std::endl; }
 	protected:
-		glm::mat4x4 m_proj_mat;
+		glm::mat4 m_proj_mat;
 
 	};
 

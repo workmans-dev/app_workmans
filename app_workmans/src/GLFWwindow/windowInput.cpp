@@ -22,7 +22,9 @@ namespace AppWMs {
 		int state = glfwGetMouseButton(window, mouseButton);
 
 
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) && glfwGetKey(window, GLFW_KEY_LEFT_ALT) ||
+			glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) && glfwGetKey(window, GLFW_KEY_LEFT_ALT) ||
+			glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) && glfwGetKey(window, GLFW_KEY_LEFT_ALT)) {
 			if (!capture) {
 				first_pressed_x = getMouseX();
 				first_pressed_y = getMouseY();

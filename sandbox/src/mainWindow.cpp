@@ -11,6 +11,11 @@
 #include "dataHandler/fileHandler/fileDialog.h"
 
 
+#include "ImGuizmo/ImGuizmo.h"
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
+
 namespace AppWMs {
 
 	MainWindow::MainWindow() : Layer("MainWindow") {
@@ -41,16 +46,11 @@ namespace AppWMs {
 			dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
 		}
 
-		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-		// and handle the pass-thru hole, so we ask Begin() to not render a background.
+
 		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
 			window_flags |= ImGuiWindowFlags_NoBackground;
 
-		// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-		// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-		// all active windows docked into it will lose their parent and become undocked.
-		// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::Begin("DockSpace Demo", &dockSpace_open, window_flags);
 		ImGui::PopStyleVar();
@@ -139,6 +139,40 @@ namespace AppWMs {
 		uint32_t textureID = pm_frameBuffer->get_colorAttach();
 		ImGui::Image(textureID, ImVec2{ pm_viewportSize.x, pm_viewportSize.y }, ImVec2{ 0,1 }, ImVec2{ 1,0 });
 
+		// ImGuizmo
+		std::set<Entity, EntityComparator>& selectedEntities = pm_sceneProperties_panel.get_selectedEntities();
+		if (!selectedEntities.empty() && pm_manipulatorType!=-1) {
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+
+			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y+21.0f
+				, (float)ImGui::GetWindowWidth() , (float)ImGui::GetWindowHeight()-21.0f);
+			
+			// primary cam_entity
+			auto* camEntity_primary = pm_scene->get_camera_primary();
+			auto& sceneCam = camEntity_primary->getComponent<CameraMatrixComponent>().sceneCam;
+			const glm::mat4& cam_proj = sceneCam.get_projection();
+			glm::mat4 cam_transform = glm::inverse(camEntity_primary->getComponent<TransformComponent>().getTransform());
+
+			// selected object
+			auto selectedEntity = *selectedEntities.begin();
+
+			auto& transComp = selectedEntity.getComponent<TransformComponent>();
+			glm::mat4 transform = transComp.getTransform();
+
+			ImGuizmo::Manipulate(glm::value_ptr(cam_transform), glm::value_ptr(cam_proj),
+				(ImGuizmo::OPERATION)pm_manipulatorType, ImGuizmo::LOCAL, glm::value_ptr(transform));
+
+
+			if (ImGuizmo::IsUsing()) {
+
+				transComp.setTransform(transform);
+			}
+
+			
+		}
+
+
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}
@@ -146,6 +180,7 @@ namespace AppWMs {
 	void MainWindow::onAttach() {
 
 		FrameBufferSpec FB_spec = { (uint32_t)pm_viewportSize.x,(uint32_t)pm_viewportSize.y };
+		FB_spec.attachSpec = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth };
 		pm_frameBuffer = FrameBuffer::create(FB_spec);
 
 		pm_scene = std::make_shared<Scene>();
@@ -156,6 +191,7 @@ namespace AppWMs {
 
 	void MainWindow::onUpdate(AppWMs::Timer time)
 	{
+
 		APP_WMS_PROFILE_FUNC();
 		const FrameBufferSpec& f_spec = pm_frameBuffer->get_spec();
 		if (pm_viewportSize != glm::vec2(f_spec.w, f_spec.h)) 
@@ -338,18 +374,59 @@ namespace AppWMs {
 			}
 			break;
 		}
+		case WMS_KEY_W: {
+
+			pm_manipulatorType = ImGuizmo::OPERATION::TRANSLATE;
+			break;
 		}
+		case WMS_KEY_E: {
+
+			pm_manipulatorType = ImGuizmo::OPERATION::ROTATE;
+			break;
+		}
+		case WMS_KEY_R: {
+
+			pm_manipulatorType = ImGuizmo::OPERATION::SCALE;
+			break;
+		}
+		case WMS_KEY_Q: {
+
+			pm_manipulatorType = 0;
+			break;
+		}
+		}
+		return true;
 	}
+
 	void MainWindow::openScene()
 	{
 		const std::string& filePath = FileDialog::openFile("WORKMANs Scene (*.wmsa)\0*.wmsa\0");
 		if (!filePath.empty()) {
 			pm_scene = std::make_shared<Scene>();
-			pm_scene->resizeView((uint32_t)pm_viewportSize.x, (uint32_t)pm_viewportSize.y);
 			pm_sceneProperties_panel.setScene(pm_scene);
 			pm_scene->onAttach();
+			pm_scene->resizeView((uint32_t)pm_viewportSize.x, (uint32_t)pm_viewportSize.y);
+
 			Serialize dataHandler(pm_scene);
 			dataHandler.deserialize(filePath);
+
+
+			std::vector<Entity>& camEntities = pm_scene->get_camEntities();
+			std::vector<std::string>& cameraNames = pm_scene->get_cameraNames();
+
+			selectedIndex = 0; // Default to first camera if no defaultCam is found
+			for (size_t i = 0; i < camEntities.size(); i++) {
+				if (camEntities[i].getComponent<CameraMatrixComponent>().primary) {
+					selectedIndex = static_cast<int>(i);
+					break;
+				}
+			}
+
+			// Ensure the correct camera is set as primary
+			for (auto& entity : camEntities) {
+				entity.getComponent<CameraMatrixComponent>().primary = false;
+			}
+			camEntities[selectedIndex].getComponent<CameraMatrixComponent>().primary = true;
 		}
 	}
 

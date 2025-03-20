@@ -22,6 +22,7 @@ namespace AppWMs {
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, pm_renderID);
 		glViewport(0, 0, pm_spec.w, pm_spec.h);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	}
 
@@ -55,18 +56,21 @@ namespace AppWMs {
 		glTextureStorage2D(pm_colorAttach, 1, GL_RGBA8, pm_spec.w, pm_spec.h);
 		glTextureParameteri(pm_colorAttach, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(pm_colorAttach, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pm_colorAttach, 0);
+		glNamedFramebufferTexture(pm_renderID, GL_COLOR_ATTACHMENT0, pm_colorAttach, 0);
 
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &pm_depthAttach);
-		glBindTexture(GL_TEXTURE_2D, pm_depthAttach); // REQUIRED before setting storage
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH24_STENCIL8, pm_spec.w, pm_spec.h);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, pm_depthAttach, 0);
-		glBindTexture(0, pm_depthAttach); // REQUIRED before setting storage
+		glTextureStorage2D(pm_depthAttach, 1, GL_DEPTH24_STENCIL8, pm_spec.w, pm_spec.h);
+		glNamedFramebufferTexture(pm_renderID, GL_DEPTH_STENCIL_ATTACHMENT, pm_depthAttach, 0);
 
+		// Check Framebuffer Status
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cerr << "ERROR: Framebuffer is not complete!" << std::endl;
+		}
 
 		// unbind <--- important!
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	}
 
 }

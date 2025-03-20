@@ -9,7 +9,9 @@
 
 #include "GLFW/glfw3.h"
 #include "glad/glad.h"
+#define GLM_ENABLE_EXPERMENTAL
 
+#include "ImGuizmo.h"
 
 namespace AppWMs {
 
@@ -122,6 +124,7 @@ namespace AppWMs {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 	}
 
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/camera/camera.h"
+#include "renderer/camera/cameraController.h"
 #include "core/layer.h"
 #include "renderer/vertexArray.h"
 #include "core/core.h"
@@ -12,7 +12,7 @@ namespace AppWMs {
 	class Renderer2D {
 	public:
 		static void init();
-		static void beginScene(const CameraMatrix& camMat, const glm::mat4& transform);
+		static void beginScene(const CameraController& cam, const glm::mat4& transform);
 
 		static void endScene();
 

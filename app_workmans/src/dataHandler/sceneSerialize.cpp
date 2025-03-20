@@ -192,7 +192,7 @@ namespace AppWMs {
 				Entity entity = pm_scene->createEntity(camName_data);
 				if (entity_data["CameraMatrixComponent"]) {
 					auto& new_camComp = entity.addComponent<CameraMatrixComponent>();
-					entity.addComponent<NativeScriptComponent>().bind<CameraController>();
+					//entity.addComponent<NativeScriptComponent>().bind<CameraController>();
 					load_camComp_data_fromFile(entity_data["CameraMatrixComponent"], new_camComp);
 					pm_scene->pm_cam_entities.emplace_back(entity);
 					pm_scene->pm_cameraViewArray.emplace_back(camName_data);

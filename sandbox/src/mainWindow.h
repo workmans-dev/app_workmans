@@ -23,24 +23,27 @@ namespace AppWMs {
 		void create_cam_button(const float& w, const float& h);
 		void add_newCam(SceneCamera::CameraProjType type);
 		bool fileHandler_shortcut(KeyPressedEvent& keyEvent);
+
 	public:
 		// file handler
 		void openScene();
 		void saveAsScene();
 		void newScene();
+
 	private:
-		bool pm_viewportEventBlocking = false;
 		Ref<FrameBuffer> pm_frameBuffer;
-
-		glm::vec2 pm_viewportSize = { 1280.0f, 720.0f };
-
 		Ref<Scene> pm_scene;
+		glm::vec2 pm_viewportSize = { 1280.0f, 720.0f };
 		SceneProperties pm_sceneProperties_panel;
 
+	private:
 		int selectedIndex = 0;
 		bool dockSpace_open = true;
 		bool showCameraNamePopup = false;
-		SceneCamera::CameraProjType type_;
+		bool pm_viewportEventBlocking = false;
+		SceneCamera::CameraProjType type_=SceneCamera::CameraProjType::perspective;
+		int pm_manipulatorType = -1;
+
 	};
 
 }

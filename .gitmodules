@@ -13,3 +13,9 @@
 [submodule "app_workmans/vendor/yaml-cpp"]
 	path = app_workmans/vendor/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "vendor/ImGuizmo"]
+	path = vendor/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "app_workmans/vendor/ImGuizmo"]
+	path = app_workmans/vendor/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

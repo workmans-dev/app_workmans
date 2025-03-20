@@ -21,7 +21,7 @@ namespace AppWMs {
 		ofn.lpstrFilter = filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		if (GetOpenFileNameA(&ofn) == true) {
+		if (GetOpenFileNameA(&ofn) == (BOOL)true) {
 			return ofn.lpstrFile;
 		}
 		return std::string();
@@ -40,7 +40,7 @@ namespace AppWMs {
 		ofn.lpstrFilter = filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		if (GetSaveFileNameA(&ofn) == true) {
+		if (GetSaveFileNameA(&ofn) == (BOOL)true) {
 			return ofn.lpstrFile;
 		}
 		return std::string();

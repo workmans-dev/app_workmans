@@ -2,6 +2,13 @@
 #include "renderer/camera/sceneCamera.h"
 #include "scene/scriptable_entity.h"
 #include "core/core.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/component_wise.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
+
 namespace AppWMs {
 
 	struct TagComponent {
@@ -10,7 +17,7 @@ namespace AppWMs {
 		bool nameEditable = true;
 		TagComponent() = default;
 		TagComponent(const std::string& name) :name(name) {};
-		TagComponent(const TagComponent&)= default;
+		TagComponent(const TagComponent&) = default;
 
 	};
 
@@ -19,42 +26,38 @@ namespace AppWMs {
 		std::string typeName = "VisComponent";
 		VisComponent(const int& v) :visible(v) {};
 		VisComponent(const VisComponent& other) :visible(other.visible) {};
-		VisComponent()  = default;
+		VisComponent() = default;
 	};
 
 
 	struct TransformComponent {
 		glm::vec3 translate = { 0.0f, 0.0f , 0.0f };
 		glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
-		glm::vec3 rotate = { 0.0f , 0.0f , 0.0f };
+		glm::vec3 rotate = { 0.0f, 0.0f, 0.0f };
 		std::string typeName = "TransformComponent";
-
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
-		TransformComponent(const glm::vec3& pos) :translate(pos) {}
-		TransformComponent(const glm::vec3& pos, const glm::vec3& rot,
-			const glm::vec3& sc) :translate(pos), rotate(rot), scale(sc) {}
+		TransformComponent(const glm::vec3& pos)
+			: translate(pos) {}
 
-		glm::mat4 getTransform() const{
-			glm::vec3 rotate_radians = glm::radians(rotate);// radians 1.0 = dgree 360
 
-			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), rotate_radians.x, { 1,0,0 })*
-				glm::rotate(glm::mat4(1.0f), rotate_radians.y, { 0,1,0 }) *
-				glm::rotate(glm::mat4(1.0f), rotate_radians.z, { 0,0,1 });
-			
+		glm::mat4 getTransform() const {
+			glm::quat quatRotation = glm::quat(glm::radians(rotate)); // Convert Euler to Quaternion
 			return glm::translate(glm::mat4(1.0f), translate) *
-				rotation *
+				glm::mat4_cast(quatRotation) * // Convert quaternion to rotation matrix
 				glm::scale(glm::mat4(1.0f), scale);
 		}
-	};
 
-	struct ShadingComponent {
-		glm::vec4 color{ 0.0f, 1.0f, 1.0f , 1.0f };
-		std::string typeName = "ShadingComponent";
+		void setTransform(glm::mat4& new_transform) {
+			glm::vec3 trans_v, skew_v, scale_v;
+			glm::quat q_rotate;
+			glm::vec4 persp;
+			glm::decompose(new_transform, scale_v, q_rotate, trans_v, skew_v, persp);
+			translate = trans_v;
+			scale = scale_v;
+			rotate = glm::degrees(glm::eulerAngles(q_rotate));
 
-		ShadingComponent() = default;
-		ShadingComponent(const ShadingComponent&) = default;
-		ShadingComponent(const glm::vec4& color) :color(color) {};
+		}
 	};
 
 	struct CameraMatrixComponent {
@@ -66,6 +69,19 @@ namespace AppWMs {
 		CameraMatrixComponent() = default;
 		CameraMatrixComponent(const CameraMatrixComponent&) = default;
 	};
+
+
+
+	struct ShadingComponent {
+		glm::vec4 color{ 0.0f, 1.0f, 1.0f , 1.0f };
+		std::string typeName = "ShadingComponent";
+
+		ShadingComponent() = default;
+		ShadingComponent(const ShadingComponent&) = default;
+		ShadingComponent(const glm::vec4& color) :color(color) {};
+	};
+
+
 
 	struct NativeScriptComponent {
 		std::string typeName = "NativeScriptComponent";
@@ -82,15 +98,15 @@ namespace AppWMs {
 		void bind() {
 			instantiate_func = [&]() {scriptable_entt_ptr = new T(); };
 			destroyInst_func = [&]() {delete static_cast<T*>(scriptable_entt_ptr);
-			scriptable_entt_ptr = nullptr;};
-			onCreate_func = [](ScriptableEntity* scriptable_entt_ptr) 
+			scriptable_entt_ptr = nullptr; };
+			onCreate_func = [](ScriptableEntity* scriptable_entt_ptr)
 				{static_cast<T*>(scriptable_entt_ptr)->onCreate(); };
 			onDestroy_func = [](ScriptableEntity* scriptable_entt_ptr)
 				{static_cast<T*>(scriptable_entt_ptr)->onDestroy(); };
-			onUpdate_func = [this](ScriptableEntity* scriptable_entt_ptr,Timer ts)
+			onUpdate_func = [this](ScriptableEntity* scriptable_entt_ptr, Timer ts)
 				{static_cast<T*>(scriptable_entt_ptr)->onUpdate(ts); };
 		}
-		
+
 	};
 
 }

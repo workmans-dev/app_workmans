@@ -14,11 +14,13 @@ namespace AppWMs {
 		SceneProperties(const Ref<Scene>& scene);
 		void onImGuiRender();
 		void setScene(const Ref<Scene>& scene);
-		void showPropertyComponents(const Entity& entity);
+		void showPropertyComponents( Entity& entity);
 		void drawModel(Entity& entity);
-		void set_deleteEntity(const Entity& entity);
+		void set_deleteEntity();
 		void set_vis_color(Entity& entity);
 		void set_vis_ctrl();
+
+		std::set<Entity, EntityComparator>& get_selectedEntities() { return pm_selectedEntities; }
 	private:
 		Ref<Scene> pm_scene;
 		std::set<Entity, EntityComparator> pm_selectedEntities;

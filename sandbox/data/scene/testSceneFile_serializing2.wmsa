@@ -1,0 +1,104 @@
+Scene: Untitled
+Entities:
+  - Entity: 5
+    TagComponent:
+      Name: Plane
+      NameEditable: true
+    TransformComponent:
+      Translate: [0, 0, 0]
+      Rotate: [87.35, 0, 0]
+      Scale: [1, 1, 1]
+    ShadingComponent:
+      Color: [0.46511626, 0.11249323, 0.11249323, 1]
+    VisComponent:
+      Visible: 1
+  - Entity: 4
+    TagComponent:
+      Name: myCam
+      NameEditable: true
+    TransformComponent:
+      Translate: [0, 0, 4.15]
+      Rotate: [-4.38, -1.64, 0]
+      Scale: [1, 1, 1]
+    CameraMatrixComponent:
+      CameraType: 0
+      VecticalFOV: 0.57595867
+      NearClip: 0.01
+      FarClip: 1000
+      Primary: true
+      FixedAspectRatio: false
+      DefaultCam: false
+    VisComponent:
+      Visible: 1
+  - Entity: 3
+    TagComponent:
+      Name: side
+      NameEditable: false
+    TransformComponent:
+      Translate: [-9.779999, -0.099999994, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraMatrixComponent:
+      CameraType: 1
+      Size: 20
+      NearClip: -1
+      FarClip: 1
+      Primary: false
+      FixedAspectRatio: false
+      DefaultCam: true
+    VisComponent:
+      Visible: 0
+  - Entity: 2
+    TagComponent:
+      Name: front
+      NameEditable: false
+    TransformComponent:
+      Translate: [0, 0, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraMatrixComponent:
+      CameraType: 1
+      Size: 20
+      NearClip: -1
+      FarClip: 1
+      Primary: false
+      FixedAspectRatio: false
+      DefaultCam: true
+    VisComponent:
+      Visible: 0
+  - Entity: 1
+    TagComponent:
+      Name: top
+      NameEditable: false
+    TransformComponent:
+      Translate: [0, 0, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraMatrixComponent:
+      CameraType: 1
+      Size: 20
+      NearClip: -1
+      FarClip: 1
+      Primary: false
+      FixedAspectRatio: false
+      DefaultCam: true
+    VisComponent:
+      Visible: 0
+  - Entity: 0
+    TagComponent:
+      Name: perspective
+      NameEditable: false
+    TransformComponent:
+      Translate: [-5.73, -3.6299999, 10]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraMatrixComponent:
+      CameraType: 0
+      VecticalFOV: 1.0471976
+      NearClip: 0.1
+      FarClip: 1000
+      Primary: false
+      FixedAspectRatio: false
+      DefaultCam: true
+    VisComponent:
+      Visible: 0

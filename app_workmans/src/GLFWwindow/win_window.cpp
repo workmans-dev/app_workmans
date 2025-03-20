@@ -8,7 +8,6 @@
 #include "openGL/openGLcontext.h"
 
 
-
 namespace AppWMs {
 
 	bool static s_glf_initialized = false;

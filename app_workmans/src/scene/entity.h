@@ -9,7 +9,6 @@ namespace AppWMs {
 		Entity(const entt::entity& entityHandle, Scene* scene);
 		Entity(const Entity& other);
 		Entity()=default;
-
 		template <typename T, typename... Args>
 		T& addComponent(Args&&... args) {
 			T& comp = pm_scene->pm_register.emplace<T>(pm_entityHandle,std::forward<Args>(args)...);
@@ -17,14 +16,12 @@ namespace AppWMs {
 			return comp;
 		}
 
+
 		template<typename T>
 		T& getComponent() {
 			return pm_scene->pm_register.get<T>(pm_entityHandle);
 		}
-		template<typename T>
-		T& getComponent() const {
-			return pm_scene->pm_register.get<T>(pm_entityHandle);
-		}
+
 
 		template<typename T>
 		bool hasComponent() {
@@ -43,7 +40,7 @@ namespace AppWMs {
 			return pm_scene->pm_register.remove<T>(pm_entityHandle);
 		}
 		
-		entt::entity get_entityID() const { return pm_entityHandle; }
+		const entt::entity& get_entityID() const { return pm_entityHandle; }
 
 		operator bool() const { return pm_entityHandle != entt::null; }
 		operator uint32_t() const { return (uint32_t)pm_entityHandle; }

@@ -17,7 +17,7 @@ namespace AppWMs {
 		RendererCommand::set_viewport(0, 0, w, h);
 	}
 
-	void Renderer::beginScene(const CameraMatrix& camera)
+	void Renderer::beginScene(const CameraController& camera)
 	{
 		pm_sceneData->view_proj_mat = camera.get_projection();
 	}
