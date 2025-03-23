@@ -92,7 +92,12 @@ namespace AppWMs {
 		virtual const BufferLayout& getLayout() const = 0;
 		// layout will be passing through OpenGLVertexArray::addVertexBuffer
 		virtual void setLayout(const BufferLayout& layout) = 0;
-		static VertexBuffer* create(float* vertices, uint32_t size);
+		virtual void setData(const void* VB, uint32_t size) = 0;
+
+
+		static Ref<VertexBuffer> create(float* vertices, uint32_t size);
+		static Ref<VertexBuffer> create( uint32_t size);
+
 	};
 
 	class IndexBuffer {
@@ -100,8 +105,9 @@ namespace AppWMs {
 		~IndexBuffer();
 		virtual void bind() const = 0;
 		virtual void unbind() const = 0;
-		static IndexBuffer* create(uint32_t* indexes, uint32_t count);
 		virtual uint32_t getCount() const = 0;
+
+		static Ref<IndexBuffer> create(uint32_t* indexes, uint32_t count);
 	};
 
 }

@@ -12,6 +12,11 @@ namespace AppWMs {
 		Renderer2D::init();
 	}
 
+	void Renderer::shutdown()
+	{
+		Renderer2D::shutdown();
+	}
+
 	void Renderer::onWindowResize(uint32_t w, uint32_t h)
 	{
 		RendererCommand::set_viewport(0, 0, w, h);
@@ -29,7 +34,7 @@ namespace AppWMs {
 		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_view_proj", pm_sceneData->view_proj_mat);
 		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_transform", transform);
 		vertexArray->bind();
-		RendererCommand::drawIndexed(vertexArray);
+		RendererCommand::drawIndexed(vertexArray );
 	}
 	void Renderer::end()
 		

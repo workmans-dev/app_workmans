@@ -9,7 +9,7 @@
 
 namespace AppWMs{
 	
-	OpenGLShader::OpenGLShader(const std::string& filePath)
+	OpenGLShader::OpenGLShader(const std::string& filePath):pm_filePath(filePath)
 	{
 		APP_WMS_PROFILE_FUNC();
 		std::string str_fromFile = readFile(filePath);
@@ -65,6 +65,13 @@ namespace AppWMs{
 	{
 		GLint location = glGetUniformLocation(pm_renderID, name.c_str());
 		glUniform1i(location, value);
+	}
+	void OpenGLShader::uploadUniformIntArray(const std::string& name, int* values, uint32_t count)
+	{
+
+		GLint location = glGetUniformLocation(pm_renderID, name.c_str());
+		glUniform1iv(location, count, values);
+		
 	}
 	void OpenGLShader::uploadUniformFloat(const std::string& name, const float& value)
 	{

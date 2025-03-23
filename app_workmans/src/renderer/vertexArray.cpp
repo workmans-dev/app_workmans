@@ -5,16 +5,7 @@
 #include "renderer/renderer.h"
 
 namespace AppWMs {
-	VertexArray::~VertexArray()
-	{
-	}
 
-	void VertexArray::addVertexBuffer(const Ref<VertexBuffer> vertexBuffer)
-	{
-	}
-	void VertexArray::setIndexBuffer(const Ref<IndexBuffer> indexBuffer)
-	{
-	}
 	Ref<VertexArray> VertexArray::create()
 	{
 		switch (Renderer::getRenderer()) {

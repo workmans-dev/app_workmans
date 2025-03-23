@@ -21,14 +21,15 @@ namespace AppWMs {
 		virtual uint32_t getHeight() const override {
 			return pm_height;
 		}
+
 		virtual void bind(uint32_t slot=0) const override;
 		virtual bool operator==(const Texture& other) const override {
-			return pm_renderID == ((OpenGLTexture2D&)other).pm_renderID;
+			return pm_renderID == ((OpenGLTexture2D&)other).get_renderID();
 		}
 	private:
-		uint32_t pm_width, pm_height, pm_renderID;
+		uint32_t pm_width, pm_height;
 		std::string pm_path;
-
+		uint32_t pm_renderID;
 		GLenum pm_internal_format=0;
 		GLenum pm_data_format=0;
 		

@@ -16,6 +16,14 @@ namespace AppWMs {
 		glBufferData(GL_ARRAY_BUFFER, size, vertexes, GL_STATIC_DRAW);
 	}
 
+	OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size)
+	{
+		APP_WMS_PROFILE_FUNC();
+		glCreateBuffers(1, &pm_renderID);
+		glBindBuffer(GL_ARRAY_BUFFER, pm_renderID);
+		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+	}
+
 	OpenGLVertexBuffer::~OpenGLVertexBuffer()
 	{
 		APP_WMS_PROFILE_FUNC();
@@ -33,7 +41,16 @@ namespace AppWMs {
 		APP_WMS_PROFILE_FUNC();
 		glBindBuffer(GL_ARRAY_BUFFER,0);
 	}
+
+	void OpenGLVertexBuffer::setData(const void* VB, uint32_t size)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, pm_renderID);
+		// update portion without memory reallocating it which it has been already allocated before.
+		glBufferSubData(GL_ARRAY_BUFFER, 0, size, VB);
+		//glNamedBufferSubData(m_RendererID, offset, size, data);
+	}
 	
+
 	//
 	// OpenGLIndexBuffer
 	//

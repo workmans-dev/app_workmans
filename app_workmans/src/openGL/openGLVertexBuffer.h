@@ -7,12 +7,13 @@ namespace AppWMs {
 	class OpenGLVertexBuffer :public VertexBuffer {
 	public:
 		OpenGLVertexBuffer(float* vertices, uint32_t size);
+		OpenGLVertexBuffer(uint32_t size);
 		virtual ~OpenGLVertexBuffer();
 		virtual void bind() const override;
 		virtual void unbind() const override;
 		virtual const BufferLayout& getLayout() const override { return pm_layout; }
 		virtual void setLayout(const BufferLayout& layout) override { pm_layout = layout; }
-
+		virtual void setData(const void* VB, uint32_t size) override;
 	private:
 		uint32_t pm_renderID;
 		BufferLayout pm_layout;

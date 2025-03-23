@@ -14,7 +14,7 @@ namespace AppWMs {
 	Scene::Scene()
 	{
 		//// texture ponters define
-		//pm_checker_tex_ptr = Texture2D::create("assets/textures/checkerBoard_1.png");
+		pm_checker_tex_ptr = Texture2D::create("assets/textures/checkerBoard_1.png");
 		//pm_icon_tex_ptr = Texture2D::create("assets/textures/WORKMANs_icon_69.png");
 				// default cam entities.
 	}
@@ -89,16 +89,25 @@ namespace AppWMs {
 		if (main_cam) {
 
 			Renderer2D::beginScene(*main_cam, cam_transform);
+			// Plane
 			auto group = pm_register.view<TransformComponent, ShadingComponent>();
 			for (auto e_ID : group) {
 				auto [transform, shading] = group.get<TransformComponent, ShadingComponent>(e_ID);
-				Renderer2D::drawQuad(transform.getTransform(), shading.color);
-
-				//Renderer2D::drawQuad_texture("texture", transform, pm_checker_tex_ptr,
-				//	{ 1.0f, 1.0f, 1.0f, 1.0f }, 10.0f);
+				//Renderer2D::drawQuad(transform.getTransform(), shading.color, { 1.0f, 1.0f }, 
+				//	{-0.5f, -0.5f, 0.0f});
+				Renderer2D::drawQuad( transform.getTransform(), shading.color,"texture", 
+					pm_checker_tex_ptr, (int)e_ID, 5.0f);
 				//Renderer2D::drawQuad_texture("texture", transform_icon, pm_icon_tex_ptr);
+
 			}
+			// cube
+			//auto group = pm_register.view<TransformComponent, CubeComponent>();
+			//for (auto e_ID : group) {
+			//	auto [transform, cube] = group.get<TransformComponent, CubeComponent>(e_ID);
+			//	Renderer2D::drawCube(transform.getTransform(), cube.color);
+			//}
 			Renderer2D::endScene();
+
 		}
 
 	}

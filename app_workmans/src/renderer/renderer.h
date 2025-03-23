@@ -8,6 +8,7 @@ namespace AppWMs {
 	class Renderer {
 	public:
 		static void init();
+		static void shutdown();
 		static void onWindowResize(uint32_t w, uint32_t h);
 		// start render
 		static void beginScene(const CameraController& camera);

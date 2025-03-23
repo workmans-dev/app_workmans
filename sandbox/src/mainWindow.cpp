@@ -110,6 +110,7 @@ namespace AppWMs {
 						if (ImGui::MenuItem("Plane", NULL, false, dockSpace_open != NULL)) {
 							Entity entt = pm_scene->createEntity("Plane1");
 							entt.addComponent<ShadingComponent>(glm::vec4(0.4f, 0.4f, 0.4f, 1.0f));
+							std::cout << "added components: ShadingComponent" << std::endl;
 						}
 						ImGui::EndMenu();
 					}
@@ -180,7 +181,10 @@ namespace AppWMs {
 	void MainWindow::onAttach() {
 
 		FrameBufferSpec FB_spec = { (uint32_t)pm_viewportSize.x,(uint32_t)pm_viewportSize.y };
-		FB_spec.attachSpec = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth };
+		// objects count??? 
+		FB_spec.attachSpec = { FramebufferTextureFormat::RGBA8, 
+			FramebufferTextureFormat::DEPTHSTENCIL8 };
+
 		pm_frameBuffer = FrameBuffer::create(FB_spec);
 
 		pm_scene = std::make_shared<Scene>();

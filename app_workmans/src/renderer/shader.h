@@ -20,6 +20,7 @@ namespace AppWMs {
 		virtual void uploadUniformMat3(const std::string& name, const glm::mat3& mat) =0;
 		virtual void uploadUniformMat4(const std::string& name, const glm::mat4& mat) = 0;
 		virtual void uploadUniformInt(const std::string& name, const int& value) = 0;
+		virtual void uploadUniformIntArray(const std::string& name, int* values, uint32_t count) =0;
 		virtual void uploadUniformFloat(const std::string& name, const float& value) = 0;
 		virtual void uploadUniformFloat2(const std::string& name, const glm::vec2& values) = 0;
 		virtual void uploadUniformFloat3(const std::string& name, const glm::vec3& values) = 0;

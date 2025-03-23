@@ -29,6 +29,7 @@ namespace AppWMs {
 
 	App::~App() {
 
+		Renderer::shutdown();
 	}
 
 	// send all events of layer events to Win_window : pm_window_ptr

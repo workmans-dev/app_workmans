@@ -10,9 +10,10 @@ namespace AppWMs {
 
 	struct FrameBufferTextureSpec {
 		FrameBufferTextureSpec() = default;
-		FrameBufferTextureSpec(FramebufferTextureFormat format) :textFormat(format) {}
-		FramebufferTextureFormat textFormat;
+		FrameBufferTextureSpec(FramebufferTextureFormat format) :textureFormat(format) {}
+		FramebufferTextureFormat textureFormat = FramebufferTextureFormat::None;
 	};
+
 	struct FrameBufferAttachmentSpec {
 		FrameBufferAttachmentSpec() = default ;
 		FrameBufferAttachmentSpec(std::initializer_list<FrameBufferTextureSpec> attachments)
@@ -41,7 +42,7 @@ namespace AppWMs {
 
 	public:
 		virtual const FrameBufferSpec& get_spec() const = 0;
-		virtual uint32_t get_colorAttach() const = 0;
+		virtual uint32_t get_colorAttach(int index=0) const = 0;
 		virtual uint32_t get_renderID() const = 0;
 	};
 }

@@ -19,6 +19,7 @@ namespace AppWMs {
 		virtual void uploadUniformMat3(const std::string& name, const glm::mat3& mat) override;
 		virtual void uploadUniformMat4(const std::string& name, const glm::mat4& mat)override;
 		virtual void uploadUniformInt(const std::string& name, const int& value)override;
+		virtual void uploadUniformIntArray(const std::string& name, int* values, uint32_t count)override;
 		virtual void uploadUniformFloat(const std::string& name, const float& value)override;
 		virtual void uploadUniformFloat2(const std::string& name, const glm::vec2& values)override;
 		virtual void uploadUniformFloat3(const std::string& name, const glm::vec3& values)override;
@@ -29,6 +30,7 @@ namespace AppWMs {
 	private:
 		uint32_t pm_renderID = 0;
 		std::string pm_fileName;
+		std::string pm_filePath;
 
 	private:
 		void compile(const std::unordered_map<GLenum, std::string>& preProcess);
