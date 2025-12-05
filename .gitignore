@@ -23,8 +23,6 @@ dist/
 # Maven
 /bin
 /bin-int
-app_workmans/vendor/Glad/bin/*
-app_workmans/vendor/Glad/bin-int/*
 packages/*
 # JetBrains IDE
 .idea/
