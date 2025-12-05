@@ -9,6 +9,7 @@
 [submodule "app_workmans/vendor/imgui"]
 	path = app_workmans/vendor/imgui
 	url = https://github.com/ocornut/imgui.git
+	branch = docking
 	ignore = all
 [submodule "app_workmans/vendor/glm"]
 	path = app_workmans/vendor/glm
