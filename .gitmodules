@@ -6,11 +6,6 @@
 	path = app_workmans/vendor/GLFW
 	url = https://github.com/glfw/glfw.git
 	ignore = all
-[submodule "app_workmans/vendor/imgui"]
-	path = app_workmans/vendor/imgui
-	url = https://github.com/ocornut/imgui.git
-	branch = docking
-	ignore = all
 [submodule "app_workmans/vendor/glm"]
 	path = app_workmans/vendor/glm
 	url = https://github.com/g-truc/glm.git
@@ -26,4 +21,9 @@
 [submodule "app_workmans/vendor/ImGuizmo"]
 	path = app_workmans/vendor/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+	ignore = all
+[submodule "app_workmans/vendor/imgui"]
+	path = app_workmans/vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
 	ignore = all

@@ -1,100 +1,31 @@
-project "GLFW"
-	kind "StaticLib"
-	language "C"
-	warnings "off"
-	staticruntime "on"	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
-	architecture "x86_64"
+project "yaml-cpp"
+    kind "StaticLib"
+    language "C++"          -- [중요] C가 아니라 C++로 변경해야 합니다.
+    staticruntime "on"
+    warnings "off"
+    defines { "YAML_CPP_STATIC_DEFINE" }
+    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-
-	files
+    -- yaml-cpp 소스 파일 및 헤더 파일 경로 지정
+    files
+    {
+        "include/**.h",     -- include 폴더 내의 모든 헤더 파일 (재귀적)
+        "src/**.cpp",       -- src 폴더 내의 모든 cpp 파일 (재귀적)
+        "src/**.h"          -- src 폴더 내의 내부 헤더 파일
+    }
+	includedirs
 	{
-		"include/GLFW/glfw3.h",
-		"include/GLFW/glfw3native.h",
-		"src/glfw_config.h",
-		"src/context.c",
-		"src/init.c",
-		"src/input.c",
-		"src/monitor.c",
-
-		"src/null_init.c",
-		"src/null_joystick.c",
-		"src/null_monitor.c",
-		"src/null_window.c",
-
-		"src/platform.c",
-		"src/vulkan.c",
-		"src/window.c",
+		"include"
 	}
 
+    filter "system:windows"
+        cppdialect "C++20"
+        systemversion "latest"
+		
 	filter "system:linux"
-		pic "On"
+		pic "on"
 		systemversion "latest"
-		files
-		{
-			"src/x11_init.c",
-			"src/x11_monitor.c",
-			"src/x11_window.c",
-			"src/xkb_unicode.c",
-			"src/posix_module.c",
-			"src/posix_time.c",
-			"src/posix_thread.c",
-			"src/posix_module.c",
-			"src/glx_context.c",
-			"src/egl_context.c",
-			"src/osmesa_context.c",
-			"src/linux_joystick.c"
-		}
-
-		defines
-		{
-			"_GLFW_X11"
-		}
-
-	filter "system:macosx"
-		pic "On"
-		files
-		{
-			"src/cocoa_init.m",
-			"src/cocoa_monitor.m",
-			"src/cocoa_window.m",
-			"src/cocoa_joystick.m",
-			"src/cocoa_time.c",
-			"src/nsgl_context.m",
-			"src/posix_thread.c",
-			"src/posix_module.c",
-			"src/osmesa_context.c",
-			"src/egl_context.c"
-		}
-
-		defines
-		{
-			"_GLFW_COCOA"
-		}
-
-	filter "system:windows"
-		systemversion "latest"
-		buildoptions {"-std=c11", "-lgdi32"}
-		files
-		{
-			"src/win32_init.c",
-			"src/win32_joystick.c",
-			"src/win32_module.c",
-			"src/win32_monitor.c",
-			"src/win32_time.c",
-			"src/win32_thread.c",
-			"src/win32_window.c",
-			"src/wgl_context.c",
-			"src/egl_context.c",
-			"src/osmesa_context.c"
-		}
-
-		defines 
-		{ 
-			"_GLFW_WIN32",
-			"_CRT_SECURE_NO_WARNINGS"
-		}
 
 	filter "configurations:Debug"
 		symbols "on"

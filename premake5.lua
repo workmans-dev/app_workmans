@@ -1,5 +1,6 @@
 workspace "app_workmans"
 	architecture "x64"
+	startproject "sandbox"
 	configurations{"Debug", "Release", "Dist"}
 
 outputdir ="%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
@@ -121,7 +122,6 @@ project "sandbox"
 	language "C++"
 	cppdialect "C++20"
 	staticruntime "on"
-	startproject "sandbox"  -- Replace with your desired project name
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 
