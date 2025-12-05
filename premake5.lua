@@ -1,6 +1,4 @@
 workspace "app_workmans"
-	startproject "sandbox"  -- Replace with your desired project name
-
 	architecture "x64"
 	configurations{"Debug", "Release", "Dist"}
 
@@ -123,6 +121,7 @@ project "sandbox"
 	language "C++"
 	cppdialect "C++20"
 	staticruntime "on"
+	startproject "sandbox"  -- Replace with your desired project name
 	targetdir ("bin/"..outputdir.. "/%{prj.name}")
 	objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 
