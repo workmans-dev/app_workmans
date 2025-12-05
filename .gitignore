@@ -23,6 +23,7 @@ dist/
 # Maven
 /bin
 /bin-int
+app_workmans/vendor/bin/*
 packages/*
 # JetBrains IDE
 .idea/
