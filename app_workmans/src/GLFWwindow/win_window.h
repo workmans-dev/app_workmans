@@ -1,24 +1,22 @@
-#pragma once
+﻿#pragma once
+#include "renderer/graphicContext.h"
 #include "core/window.h"
 
-#include "renderer/graphicContext.h"
 
-#include <GLFW/glfw3.h>
+
 
 namespace AppWMs {
 	class Win_Window :public Window {
 	private:
-		struct WindowData 
-		{
+		GLFWwindow* m_GLFWwindow_ptr;
+		GraphicContext* m_context_ptr;
+		struct WindowData {
 			std::string title;
 			unsigned int w, h;
 			bool VSync;
 			EventCallBackFn EventCallBack;
 		};
-		WindowData pm_data;
-
-		GLFWwindow* pm_GLFWwindow_ptr;
-		GraphicContext* m_context_ptr;
+		WindowData m_data;
 		
 	private:
 		virtual void init(const WindowProps& Win_props);
@@ -28,8 +26,8 @@ namespace AppWMs {
 		Win_Window(const WindowProps& Win_props);
 		virtual ~Win_Window();
 		void onUpdate() override;
-		inline unsigned int getWidth() const override {return pm_data.w;}
-		inline unsigned int getHeight() const override {return pm_data.h;}
+		inline unsigned int getWidth() const override {return m_data.w;}
+		inline unsigned int getHeight() const override {return m_data.h;}
 		inline void setData_EventCallBack(const EventCallBackFn& callback) override;
 		void setVSync(bool enabled) override;
 		bool isVSync() const override;

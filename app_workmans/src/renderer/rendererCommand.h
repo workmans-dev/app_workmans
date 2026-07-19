@@ -19,6 +19,7 @@ namespace AppWMs {
 		inline static void drawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount=0) {
 			pm_rendererAPI_ptr->drawIndexed(vertexArray, indexCount);
 		}
+		inline static RendererAPI& getAPI() { return *pm_rendererAPI_ptr; }
 	private:
 		//  in cpp file, it will create as OpenGLRenderAPI pointer.
 		static Scope<RendererAPI> pm_rendererAPI_ptr;

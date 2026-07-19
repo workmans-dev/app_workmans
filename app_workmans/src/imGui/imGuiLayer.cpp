@@ -1,17 +1,19 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "imGui/imGuiLayer.h"
-
 #include "imgui.h"
-#include "backends/imgui_impl_opengl3.h"
+
+#include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
 
 #include "core/application.h"
 
-#include "GLFW/glfw3.h"
-#include "glad/glad.h"
+#include "vulkan/vulkanContext.h"
+#include "vulkan/vulkanRenderer.h"
+#include "renderer/rendererCommand.h"
 #define GLM_ENABLE_EXPERMENTAL
 
 #include "ImGuizmo.h"
+
 
 namespace AppWMs {
 
@@ -68,17 +70,12 @@ namespace AppWMs {
 	}
 
 	
-	ImGuiLayer::ImGuiLayer():Layer("ImGuiLayer")
-	{
-	}
-
-	ImGuiLayer::~ImGuiLayer()
-	{
-	}
+	ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
+	ImGuiLayer::~ImGuiLayer() {}
 
 	void ImGuiLayer::onAttach()
 	{
-		// Setup Dear ImGui context
+		// 1. 순수 ImGui 컨텍스트 생성 및 기본 세팅만 수행 (독립성 보장)
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
@@ -87,19 +84,49 @@ namespace AppWMs {
 
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; 	
-		// dark theme
-		setDark();
-	
-		App& app = App::getApp();
-		// 형님의 설계 원칙에 따라 완전히 삭제되어 쓰레기통으로 들어갔습니다.
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-		ImGui_ImplGlfw_InitForOpenGL(glfw_window_ptr, true);
-		ImGui_ImplOpenGL3_Init("#version 410");
+		setDark();
+
+		// 🔴 과거의 지저분했던 App 캐스팅 및 윈도우 강제 스캔 로직(App::getApp()...)은 
+		// 형님의 설계 원칙에 따라 완전히 삭제되어 쓰레기통으로 들어갔습니다.
 	}
 
+	void ImGuiLayer::InitVulkanBackend()
+	{
+		// 1. 윈도우 연동
+		GLFWwindow* window = static_cast<GLFWwindow*>(App::getApp().getWindow().getGLFWWindow());
+		ImGui_ImplGlfw_InitForVulkan(window, true);
 
+		// 2. 하드웨어 인프라(Context) 빼오기
+		auto context = VulkanContext::Get();
+
+		// 3. 🔥 [완성] 형님이 짚어주신 pm_rendererAPI_ptr를 활용한 완벽한 다운캐스팅 연동!
+		auto renderer = static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI());
+
+		ImGui_ImplVulkan_InitInfo init_info = {};
+
+		init_info.Instance = context->getInstance();
+		init_info.PhysicalDevice = context->getPhysicalDevice();
+		init_info.Device = context->getDevice();
+
+		init_info.QueueFamily = 0;
+		vkGetDeviceQueue(context->getDevice(), 0, 0, &init_info.Queue);
+
+		init_info.PipelineCache = VK_NULL_HANDLE;
+
+		// 🟢 게터로 뚫어둔 도화지와 물감 바구니가 에러 없이 완벽하게 바인딩됩니다.
+		init_info.DescriptorPool = renderer->getDescriptorPool();
+		init_info.RenderPass = renderer->getRenderPass();
+
+		init_info.Subpass = 0;
+		init_info.MinImageCount = 2;
+		init_info.ImageCount = 3;
+		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		init_info.Allocator = nullptr;
+
+		ImGui_ImplVulkan_Init(&init_info);
+	}
 
 	void ImGuiLayer::onEvent(Event& event)
 	{
@@ -112,36 +139,33 @@ namespace AppWMs {
 
 	void ImGuiLayer::onDetach()
 	{
-		ImGui_ImplOpenGL3_Shutdown();
+		// 🟢 종료 처리 코드도 벌칸 백엔드 전용으로 깔끔하게 정리
+		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 	}
 
-
-
-
 	void ImGuiLayer::begin() {
-		ImGui_ImplOpenGL3_NewFrame();
+		// 🟢 매 프레임 시작 시 벌칸 백엔드 프레임 선언
+		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 	}
 
-
 	void ImGuiLayer::end() {
 		ImGuiIO& io = ImGui::GetIO();
 		App& app = App::getApp();
 		io.DisplaySize = ImVec2((float)app.getWindow().getWidth(), (float)app.getWindow().getHeight());
+
 		ImGui::Render();
 
-
-
-		GLFWwindow* backup_current_context = glfwGetCurrentContext();
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-		glfwMakeContextCurrent(backup_current_context);
-
-		
+		// 멀티 뷰포트 창 처리
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backup_current_context);
+		}
 	}
-
 }

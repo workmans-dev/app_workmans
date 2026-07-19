@@ -2,7 +2,7 @@
 
 #include "buffer.h"
 
-#include "openGL/openGLVertexBuffer.h"
+
 #include "renderer/renderer.h"
 
 //#if APP_WMS_PLATFORM_WINDOWS

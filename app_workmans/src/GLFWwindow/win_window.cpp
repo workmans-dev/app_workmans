@@ -1,12 +1,12 @@
-#include "pch.h"
+﻿#include "pch.h"
+#include <GLFW/glfw3.h>
+
 #include "win_window.h"
 
 #include "events/applicationEvent.h"
 #include "events/keyEvent.h"
 #include "events/mouseEvent.h"
-
-#include "openGL/openGLcontext.h"
-
+#include "vulkan/vulkanContext.h"
 
 namespace AppWMs {
 
@@ -35,9 +35,9 @@ namespace AppWMs {
 	void Win_Window::init(const WindowProps& Win_props)
 	{
 		APP_WMS_PROFILE_FUNC()
-		pm_data.w = Win_props.w;
-		pm_data.h = Win_props.h;
-		pm_data.title = Win_props.title;
+		m_data.w = Win_props.w;
+		m_data.h = Win_props.h;
+		m_data.title = Win_props.title;
 		APP_WMS_CORE_INFO("creating window :  {0}, {1}, {2}",
 		Win_props.title, Win_props.w, Win_props.h);
 		if (!s_glf_initialized) 
@@ -48,18 +48,19 @@ namespace AppWMs {
 			s_glf_initialized = true;
 		}
 
-		pm_GLFWwindow_ptr = glfwCreateWindow((int)Win_props.w, 
-			(int)Win_props.h, Win_props.title.c_str(), 
-			nullptr, nullptr);
-		m_context_ptr = new OpenGLContext(pm_GLFWwindow_ptr);
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		m_GLFWwindow_ptr = glfwCreateWindow((int)Win_props.w,
+			(int)Win_props.h, Win_props.title.c_str(), nullptr, nullptr);
+		m_context_ptr = new VulkanContext(m_GLFWwindow_ptr);
 		m_context_ptr->init();
 
+
 		// put WindowData into pm_GLFWWindow_ptr!!!
-		glfwSetWindowUserPointer(pm_GLFWwindow_ptr, &pm_data);
+		glfwSetWindowUserPointer(m_GLFWwindow_ptr, &m_data);
 		setVSync(true);
 
 		// set GLFW call back
-		glfwSetWindowSizeCallback(pm_GLFWwindow_ptr,
+		glfwSetWindowSizeCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window, int width, int height) 
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
@@ -68,14 +69,14 @@ namespace AppWMs {
 				WindowResizeEvent event(width, height);
 				data.EventCallBack(event);
 			});
-		glfwSetWindowCloseCallback(pm_GLFWwindow_ptr,
+		glfwSetWindowCloseCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window)
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				WindowCloseEvent event;
 				data.EventCallBack(event);
 			});
-		glfwSetKeyCallback(pm_GLFWwindow_ptr, 
+		glfwSetKeyCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window, int key, int scancode, int action, int mods) 
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
@@ -97,14 +98,14 @@ namespace AppWMs {
 						}
 				}
 			});
-		glfwSetCharCallback(pm_GLFWwindow_ptr,
+		glfwSetCharCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window, unsigned int key) 
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				KeyTypedEvent event(key);
 				data.EventCallBack(event);
 			});
-		glfwSetMouseButtonCallback(pm_GLFWwindow_ptr,
+		glfwSetMouseButtonCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window, int button, int action, int mods) 
 			{
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
@@ -121,13 +122,13 @@ namespace AppWMs {
 					}
 				}			
 			});
-		glfwSetScrollCallback(pm_GLFWwindow_ptr, 
+		glfwSetScrollCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window, double xOffset, double yOffset) {
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				MouseScrollEvent event((float)xOffset, (float)yOffset);
 				data.EventCallBack(event);
 			});
-		glfwSetCursorPosCallback(pm_GLFWwindow_ptr, 
+		glfwSetCursorPosCallback(m_GLFWwindow_ptr,
 			[](GLFWwindow* window, double xPos, double yPos) {
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				MouseMovedEvent event((float)xPos, (float)yPos);
@@ -137,18 +138,18 @@ namespace AppWMs {
 
 	void Win_Window::close() 
 	{
-		glfwDestroyWindow(pm_GLFWwindow_ptr);
+		glfwDestroyWindow(m_GLFWwindow_ptr);
 	}
 
 	void Win_Window::onUpdate()
 	{
 		APP_WMS_PROFILE_FUNC();
 		glfwPollEvents();
-		m_context_ptr->swapBuffers();
 	}
 
-	inline void Win_Window::setData_EventCallBack(const EventCallBackFn& callback) 
-	{ pm_data.EventCallBack = callback; }
+	inline void Win_Window::setData_EventCallBack(
+		const EventCallBackFn& callback)
+	{ m_data.EventCallBack = callback; }
 
 	void Win_Window::setVSync(bool enabled)
 	{
@@ -159,12 +160,12 @@ namespace AppWMs {
 		else {
 			glfwSwapInterval(0);
 		}
-		pm_data.VSync = enabled;
+		m_data.VSync = enabled;
 	}
 
 	bool Win_Window::isVSync() const
 	{
-		return pm_data.VSync;
+		return m_data.VSync;
 	}
 
 }

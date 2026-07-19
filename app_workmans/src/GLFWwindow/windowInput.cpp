@@ -21,25 +21,8 @@ namespace AppWMs {
 		auto window = static_cast<GLFWwindow*>(App::getApp().getWindow().getGLFWWindow());
 		int state = glfwGetMouseButton(window, mouseButton);
 
-
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) && glfwGetKey(window, GLFW_KEY_LEFT_ALT) ||
-			glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) && glfwGetKey(window, GLFW_KEY_LEFT_ALT) ||
-			glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) && glfwGetKey(window, GLFW_KEY_LEFT_ALT)) {
-			if (!capture) {
-				first_pressed_x = getMouseX();
-				first_pressed_y = getMouseY();
-				capture = true;
-			}
-			//first_pressed_x = getMouseX() - first_pressed_x; // Sensitivity factor
-			//first_pressed_y = getMouseY() - first_pressed_y;  // Invert Y to match screen space
-		}
-		else {
-			capture = false;
-		}
-
 		return state == GLFW_PRESS ;
 	}
-
 
 	std::pair<float, float> WindowInput::getMousePosImpl()
 	{
@@ -48,7 +31,6 @@ namespace AppWMs {
 		glfwGetCursorPos(window, &xPos, &yPos);
 		return { (float)xPos, (float)yPos };
 	}
-
 
 
 	float WindowInput::getMouseXImpl()
@@ -63,25 +45,5 @@ namespace AppWMs {
 	}
 
 
-	float WindowInput::getMouseDistXImpl()
-	{
-		return first_pressed_x;
-	}
 
-	float WindowInput::getMouseDistYImpl()
-	{
-		return first_pressed_y;
-
-	}
-
-	std::pair<float, float> WindowInput::getDist_mouseMovedImpl()
-	{
-		auto window = static_cast<GLFWwindow*>(App::getApp().getWindow().getGLFWWindow());
-		int w, h;
-		glfwGetFramebufferSize(window, &w, &h);
-		float r = (float)w / float(h);
-		float delta_x = (getMouseX() - getMouseDistXImpl())* 0.01f;
-		float delta_y = (getMouseY() - getMouseDistYImpl())*  0.01f;
-		return { -delta_x, delta_y };
-	}
 }

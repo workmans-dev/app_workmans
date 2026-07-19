@@ -2,5 +2,6 @@
 #include "renderer/rendererAPI.h"
 
 namespace AppWMs {
-	RendererAPI::SelectRenderer RendererAPI::s_render = RendererAPI::SelectRenderer::OpenGL;
+	RendererAPI::SelectRenderer RendererAPI::s_render = 
+		RendererAPI::SelectRenderer::Vulkan;
 }

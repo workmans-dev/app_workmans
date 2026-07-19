@@ -12,8 +12,10 @@ namespace AppWMs {
 		void popLayer(Layer* layer);
 		void popOverlay(Layer* overlay);
 
-		std::vector<Layer*>::iterator begin() { return m_layers.begin(); }
-		std::vector<Layer*>::iterator end() { return m_layers.end(); }
+		std::vector<Layer*>::iterator begin() 
+		{ return m_layers.begin(); }
+		std::vector<Layer*>::iterator end() 
+		{ return m_layers.end(); }
 
 	private:
 		std::vector<AppWMs::Layer*> m_layers;

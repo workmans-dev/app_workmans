@@ -1,7 +1,6 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "application.h"
 #include "renderer/renderer.h"
-#include "core/input.h"
 #include "core/timer.h"
 #include <glfw/glfw3.h>
 
@@ -9,23 +8,22 @@ namespace AppWMs {
 	App* App::pm_Instance = nullptr;
 
 	App::App() {
-		APP_WMS_PROFILE_FUNC();
-		APP_WMS_CORE_ASSERTS(!pm_Instance, "Exits!!!")
-		pm_Instance = this;
-		// the Type is Window BUT it will return as the Win_win which is a parent Class of Window.
-		// don't be confused here, so important!!
+		// 1. 창문 만들기 (Vulkan Instance, Device 등 기본 뼈대 생성)
 		pm_window_ptr = std::unique_ptr<Window>(Window::create());
-		// set event call back
 		pm_window_ptr->setData_EventCallBack(BIND_EVENT_FN(App::onEvent));
 
-		// renderer init
+		// 2. 렌더러 초기화 (여기서 벌칸 RenderPass, DescriptorPool 등 핵심 부품 완성!)
 		Renderer::init();
 
-		// GUI
-		pm_imGuiLayer_ptr = new ImGuiLayer();
+		// 3. 💥 드디어 임구이 레이어 오브젝트 생성! (여기서 오브젝트가 메모리에 올라갑니다)
+		pm_imGuiLayer_ptr = new ImGuiLayer(); // 내부 onAttach() 실행되어 순수 ImGui 컨텍스트 생성
 		pushOverlay(pm_imGuiLayer_ptr);
 
+		// 4. 🔥 오브젝트가 확실히 존재하므로, 이제 메서드를 호출해서 벌칸 부품을 주입합니다!
+		auto winPtr = static_cast<Win_Window*>(pm_window_ptr.get());
+		pm_imGuiLayer_ptr->InitVulkanBackend(winPtr->m_data);
 	}
+
 
 	App::~App() {
 
@@ -62,6 +60,8 @@ namespace AppWMs {
 			pm_imGuiLayer_ptr->begin();
 			for (Layer* layer : pm_layerStack)
 			{
+				// each layer(ui component) has to 
+				// have this method if gui feature needs !
 				layer->onImGuiRender();
 			}
 			pm_imGuiLayer_ptr->end();

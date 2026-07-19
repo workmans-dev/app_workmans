@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "renderer/renderer2D.h"
-#include "openGL/openGLShader.h"
 #include "renderer/rendererCommand.h"
 #include "renderer/uniformBuffer.h"
 #define GLM_ENABLE_EXPERIMENTAL

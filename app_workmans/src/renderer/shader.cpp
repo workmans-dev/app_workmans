@@ -2,7 +2,6 @@
 #include "shader.h"
 
 #include "renderer/renderer.h"
-#include "openGL/openGLShader.h"
 
 
 namespace AppWMs {
@@ -10,7 +9,7 @@ namespace AppWMs {
 	{
 		switch (Renderer::getRenderer()) {
 		case RendererAPI::SelectRenderer::None: APP_WMS_CORE_ASSERTS(false, "Renderer is None");
-		case RendererAPI::SelectRenderer::OpenGL: return std::make_shared<OpenGLShader>(filePath);
+		case RendererAPI::SelectRenderer::Vulkan: return std::make_shared<OpenGLShader>(filePath);
 		}
 		APP_WMS_CORE_ASSERTS(false, "Unknown renderer");
 		return nullptr;

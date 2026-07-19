@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "renderer/renderer.h"
-#include "openGL/openGLShader.h"
 #include "renderer/renderer2D.h"
 
 namespace AppWMs {
@@ -31,8 +30,6 @@ namespace AppWMs {
 		const glm::mat4& transform)
 	{
 		shader->bind();
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_view_proj", pm_sceneData->view_proj_mat);
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_transform", transform);
 		vertexArray->bind();
 		RendererCommand::drawIndexed(vertexArray );
 	}

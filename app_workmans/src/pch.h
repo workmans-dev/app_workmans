@@ -12,7 +12,9 @@
 #include <memory>
 #include <utility>
 #include <fstream>
+#include <optional>
 #include <chrono>
+#include <set>
 
 #include "core/log.h"
 #include "debugs/instrumentation.h"

@@ -1,12 +1,11 @@
 #include "pch.h"
 #include "rendererCommand.h"
 
-#include "openGL/openGLRenderer.h"
+#include "vulkan/vulkanRenderer.h"
 
 namespace AppWMs {
 
 	Scope<RendererAPI> RendererCommand::pm_rendererAPI_ptr =
-		std::make_unique< OpenGLRendererAPI>();
-
+		std::make_unique<VulkanRendererAPI>();
 
 }
