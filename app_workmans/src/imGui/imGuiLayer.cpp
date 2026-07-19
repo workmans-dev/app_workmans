@@ -93,7 +93,7 @@ namespace AppWMs {
 		setDark();
 	
 		App& app = App::getApp();
-		GLFWwindow* glfw_window_ptr = static_cast<GLFWwindow*> (app.getWindow().getGLFWWindow());
+		// 형님의 설계 원칙에 따라 완전히 삭제되어 쓰레기통으로 들어갔습니다.
 
 		ImGui_ImplGlfw_InitForOpenGL(glfw_window_ptr, true);
 		ImGui_ImplOpenGL3_Init("#version 410");
@@ -133,7 +133,7 @@ namespace AppWMs {
 		App& app = App::getApp();
 		io.DisplaySize = ImVec2((float)app.getWindow().getWidth(), (float)app.getWindow().getHeight());
 		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
 
 		GLFWwindow* backup_current_context = glfwGetCurrentContext();

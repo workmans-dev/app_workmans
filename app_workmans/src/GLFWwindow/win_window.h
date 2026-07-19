@@ -33,6 +33,6 @@ namespace AppWMs {
 		inline void setData_EventCallBack(const EventCallBackFn& callback) override;
 		void setVSync(bool enabled) override;
 		bool isVSync() const override;
-		inline virtual void* getGLFWWindow() const { return pm_GLFWwindow_ptr; }
+		inline virtual void* getGLFWWindow() const override { return m_GLFWwindow_ptr; }
 	};
 }
