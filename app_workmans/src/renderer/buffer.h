@@ -66,8 +66,8 @@ namespace AppWMs {
 				offset += e.size;
 				pm_stride += e.size;
 			}
-
 		};
+
 	public:
 		BufferLayout();
 		BufferLayout(const std::initializer_list<BufferElements>& elements):pm_bufferElements(elements){
@@ -81,12 +81,11 @@ namespace AppWMs {
 		std::vector<BufferElements>::iterator end() { return pm_bufferElements.end(); }
 		std::vector<BufferElements>::const_iterator begin() const { return pm_bufferElements.begin(); }
 		std::vector<BufferElements>::const_iterator end() const { return pm_bufferElements.end(); }
-
 	};
 
 	class VertexBuffer {
 	public:
-		~VertexBuffer();
+		virtual ~VertexBuffer()= default;
 		virtual void bind() const = 0;
 		virtual void unbind() const = 0;
 		virtual const BufferLayout& getLayout() const = 0;
@@ -94,15 +93,13 @@ namespace AppWMs {
 		virtual void setLayout(const BufferLayout& layout) = 0;
 		virtual void setData(const void* VB, uint32_t size) = 0;
 
-
 		static Ref<VertexBuffer> create(float* vertices, uint32_t size);
 		static Ref<VertexBuffer> create( uint32_t size);
-
 	};
 
 	class IndexBuffer {
 	public:
-		~IndexBuffer();
+		virtual ~IndexBuffer()= default;
 		virtual void bind() const = 0;
 		virtual void unbind() const = 0;
 		virtual uint32_t getCount() const = 0;

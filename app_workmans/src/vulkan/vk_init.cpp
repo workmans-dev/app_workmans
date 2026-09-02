@@ -23,19 +23,44 @@ namespace AppWMs {
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
 
-            // 3. 핵심: GLFW가 화면을 띄우기 위해 필요한 필수 확장 기능(Extension) 목록 가져오기
+
+
+            // 3. GLFW 필수 확장(VK_KHR_surface, VK_KHR_win32_surface) 수집
             uint32_t glfwExtensionCount = 0;
-            const char** glfwExtensions;
-            // 3. to get VK_KHR_surface, VK_KHR_win32_surface
-            glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+            const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+            std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-            // 받아온 GLFW 확장 기능 정보들을 인스턴스 설정 컨테이너에 담아줍니다.
-            createInfo.enabledExtensionCount = glfwExtensionCount;
-            createInfo.ppEnabledExtensionNames = glfwExtensions;
+            // 🟢 디버그 빌드에서만 validation layer 활성화
+            std::vector<const char*> layers;
+#ifdef APP_WMS_DEBUG
+            {
+                const char* kValidation = "VK_LAYER_KHRONOS_validation";
+                uint32_t layerCount = 0;
+                vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+                std::vector<VkLayerProperties> available(layerCount);
+                vkEnumerateInstanceLayerProperties(&layerCount, available.data());
 
-            // 디버깅용 유효성 검사 레이어(Validation Layer)는 일단 지금은 0으로 비워두고 기본 구동에 집중합니다.
-            createInfo.enabledLayerCount = 0;
+                bool found = false;
+                for (const auto& p : available) {
+                    if (strcmp(p.layerName, kValidation) == 0) { found = true; break; }
+                }
+                if (found) {
+                    layers.push_back(kValidation);
+                    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+                    APP_WMS_CORE_INFO("Validation layer enabled");
+                }
+                else {
+                    APP_WMS_CORE_WARN("VK_LAYER_KHRONOS_validation not found - SDK layer install 확인");
+                }
+            }
+#endif
+            createInfo.enabledExtensionCount = (uint32_t)extensions.size();
+            createInfo.ppEnabledExtensionNames = extensions.data();
+            createInfo.enabledLayerCount = (uint32_t)layers.size();
+            createInfo.ppEnabledLayerNames = layers.data();
             createInfo.pNext = nullptr;
+
+
 
             // 4. 실제 인스턴스 생성 및 하드웨어 컨텍스트 확보
             VkInstance instance;
@@ -91,7 +116,7 @@ namespace AppWMs {
             }
             return bestDevice;
         }
-
+  
         // 🟢 내부적으로만 쓰일 통로 검색 자동화 헬퍼 함수
         QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
             QueueFamilyIndices indices;
@@ -102,44 +127,54 @@ namespace AppWMs {
             std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
             vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-            // 2. 루프를 돌며 내 조건에 맞는 통로 번호 싹 긁어오기
-            for (int i = 0; i < queueFamilyCount; i++) {
+            // 2. graphics / present 통로 탐색
+            for (uint32_t i = 0; i < queueFamilyCount; i++) {
+                const auto& flags = queueFamilies[i].queueFlags;
                 // 그래픽 연산이 가능한 통로인가?
-                if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                if (flags & VK_QUEUE_GRAPHICS_BIT) {
                     indices.graphicsFamily = i;
                 }
-
-                // ⭐️ 핵심: 이 통로가 우리가 만든 도화지(surface)에 그림을 던질 수 있는가?
+                // ⭐️ 이 통로가 우리가 만든 도화지(surface)에 그림을 던질 수 있는가?
                 VkBool32 presentSupport = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
                 if (presentSupport) {
                     indices.presentFamily = i;
                 }
+            }
 
-                // 두 개 다 찾았으면 굳이 더 돌 필요 없이 조기 탈출!
-                if (indices.isComplete()) {
-                    break;
+            // 3. ⭐️ 전용 transfer 통로 우선 탐색:
+            //    "TRANSFER 비트는 있으면서 GRAPHICS 비트는 없는" 순수 DMA 전용 패밀리를 찾는다.
+            //    (모든 graphics 큐는 암묵적으로 transfer 가능하지만, 별도 DMA 엔진을 쓰려면 분리 패밀리가 필요)
+            for (uint32_t i = 0; i < queueFamilyCount; i++) {
+                const auto& flags = queueFamilies[i].queueFlags;
+                if ((flags & VK_QUEUE_TRANSFER_BIT) &&
+                    !(flags & VK_QUEUE_GRAPHICS_BIT)) {
+                    indices.transferFamily = i;
+                    break; // 전용 통로 발견 → 확정
                 }
             }
+
+            // 4. 전용 전송 통로가 없으면 graphics 통로로 폴백 (같은 패밀리 → 나중에 배리어 생략됨)
+            if (!indices.transferFamily.has_value()) {
+                indices.transferFamily = indices.graphicsFamily;
+            }
+
             return indices;
         }
-  
-
 
 
 
         VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, 
-            VkSurfaceKHR surface, const EngineGraphicsSettings& settings) {
-
-            // 1. 자동화 로직으로 두 통로의 인덱스를 완벽하게 확보합니다.
-            QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, surface);
+            const QueueFamilyIndices& indices, const EngineGraphicsSettings& settings) {
 
             // 가동 서류에 첨부할 큐 생성 정보 배열 준비
             std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-            // 두 통로 번호가 같을 수도, 다를 수도 있으므로 std::set을 이용해 중복 번호를 걸러내어 컨테이너화합니다.
-            std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+            std::set<uint32_t> uniqueQueueFamilies = {
+                indices.graphicsFamily.value(),
+                indices.presentFamily.value(),
+                indices.transferFamily.value()
+            };
 
             float queuePriority = 1.0f;
             for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -181,5 +216,23 @@ namespace AppWMs {
 
             return device;
         }
+
+        VkCommandPool CreateCommandPool(VkDevice device, uint32_t queueFamilyIndex,
+            VkCommandPoolCreateFlags flags) {
+
+            VkCommandPoolCreateInfo poolInfo{};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.queueFamilyIndex = queueFamilyIndex;
+            poolInfo.flags = flags;
+
+            VkCommandPool pool;
+            if (vkCreateCommandPool(device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+                APP_WMS_CORE_ERROR("failed to create command pool! (family {0})", queueFamilyIndex);
+                return VK_NULL_HANDLE;
+            }
+            return pool;
+        }
+
+
     }
 }

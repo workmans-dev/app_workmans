@@ -92,39 +92,41 @@ namespace AppWMs {
 		// 형님의 설계 원칙에 따라 완전히 삭제되어 쓰레기통으로 들어갔습니다.
 	}
 
-	void ImGuiLayer::InitVulkanBackend()
+	void ImGuiLayer::InitVulkanBackend(GLFWwindow* window)
 	{
 		// 1. 윈도우 연동
-		GLFWwindow* window = static_cast<GLFWwindow*>(App::getApp().getWindow().getGLFWWindow());
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 
 		// 2. 하드웨어 인프라(Context) 빼오기
 		auto context = VulkanContext::Get();
 
-		// 3. 🔥 [완성] 형님이 짚어주신 pm_rendererAPI_ptr를 활용한 완벽한 다운캐스팅 연동!
+		// 3. pm_rendererAPI_ptr를 활용한 완벽한 다운캐스팅 연동!
 		auto renderer = static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI());
 
 		ImGui_ImplVulkan_InitInfo init_info = {};
-
+		init_info.ApiVersion = VK_API_VERSION_1_3;  // 🟢 신버전 필수 필드
 		init_info.Instance = context->getInstance();
 		init_info.PhysicalDevice = context->getPhysicalDevice();
 		init_info.Device = context->getDevice();
 
-		init_info.QueueFamily = 0;
-		vkGetDeviceQueue(context->getDevice(), 0, 0, &init_info.Queue);
-
+		// 🟢 Context가 init에서 한 번 찾아둔 인덱스 재사용 (0번 하드코딩 제거)
+		uint32_t graphicsFamily = context->getQueueIndices().graphicsFamily.value();
+		init_info.QueueFamily = graphicsFamily;
+		vkGetDeviceQueue(context->getDevice(), graphicsFamily, 0, &init_info.Queue);
+		// struct ImGui_ImplVulkan_InitInfo set
 		init_info.PipelineCache = VK_NULL_HANDLE;
-
-		// 🟢 게터로 뚫어둔 도화지와 물감 바구니가 에러 없이 완벽하게 바인딩됩니다.
 		init_info.DescriptorPool = renderer->getDescriptorPool();
-		init_info.RenderPass = renderer->getRenderPass();
 
-		init_info.Subpass = 0;
 		init_info.MinImageCount = 2;
-		init_info.ImageCount = 3;
-		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-		init_info.Allocator = nullptr;
+		init_info.ImageCount = (uint32_t)context->getSwapChainImages().size();
 
+		init_info.Allocator = nullptr;
+		// struct ImGui_ImplVulkan_PipelineInfo set
+		
+		init_info.PipelineInfoMain.RenderPass = renderer->getRenderPass();
+		init_info.PipelineInfoMain.Subpass = 0;
+		init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		
 		ImGui_ImplVulkan_Init(&init_info);
 	}
 
@@ -160,12 +162,35 @@ namespace AppWMs {
 
 		ImGui::Render();
 
+		// 🟢 메인 창 스왑체인 렌더패스에 ImGui 드로우 기록
+		//    커맨드버퍼는 Context가 beginFrame에서 이미 열어둔 것을 빌려 씀
+		auto ctx = VulkanContext::Get();
+		auto renderer = static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI());
+		VkCommandBuffer cmd = ctx->getCurrentCommandBuffer();
+
+		const glm::vec4& cc = renderer->getClearColor();
+		VkClearValue clearValue{};
+		clearValue.color = { { cc.r, cc.g, cc.b, cc.a } };  // attachment 0 = color (깊이 없음)
+
+		VkRenderPassBeginInfo rpBegin{};
+		rpBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		rpBegin.renderPass = renderer->getRenderPass();
+		rpBegin.framebuffer = renderer->getFramebuffer(ctx->getCurrentImageIndex());
+		rpBegin.renderArea.offset = { 0, 0 };
+		rpBegin.renderArea.extent = ctx->getSwapChainExtent();
+		rpBegin.clearValueCount = 1;
+		rpBegin.pClearValues = &clearValue;
+
+		vkCmdBeginRenderPass(cmd, &rpBegin, VK_SUBPASS_CONTENTS_INLINE);
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+		vkCmdEndRenderPass(cmd);
+
 		// 멀티 뷰포트 창 처리
+		// ⚠️ 세컨더리 뷰포트는 ImGui가 자체 스왑체인/커맨드버퍼/submit/present를 처리.
+		//    메인 커맨드버퍼는 아직 기록 중(미제출)이라 큐 충돌 없음.
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-			GLFWwindow* backup_current_context = glfwGetCurrentContext();
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
-			glfwMakeContextCurrent(backup_current_context);
 		}
 	}
 }

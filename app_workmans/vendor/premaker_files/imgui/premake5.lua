@@ -18,7 +18,14 @@ project "ImGui"
 		"imstb_textedit.h",
 		"imstb_truetype.h",
 		"imgui_demo.cpp",
-		"imgui_tables.cpp"
+		"imgui_tables.cpp",
+		"backends/imgui_impl_vulkan.h",
+		"backends/imgui_impl_vulkan.cpp"
+	}
+
+		includedirs
+	{
+		"%{includeDir.Vulkan}"
 	}
 
 	filter "system:windows"

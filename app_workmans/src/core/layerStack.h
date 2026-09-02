@@ -11,6 +11,9 @@ namespace AppWMs {
 		void pushOverlay(Layer* overlay);
 		void popLayer(Layer* layer);
 		void popOverlay(Layer* overlay);
+		// 🟢 onDetach 호출 후 전부 파괴. 종료 순서를 App이 직접 잡기 위해 노출한다.
+		//    두 번 불러도 안전하다(소멸자도 이걸 쓴다).
+		void clear();
 
 		std::vector<Layer*>::iterator begin() 
 		{ return m_layers.begin(); }

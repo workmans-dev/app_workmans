@@ -50,6 +50,9 @@ namespace AppWMs {
 			//m_Distance = pm_ortho_size;
 
 		}
+
+		// ⚠️ m_proj_mat은 glm 원본(OpenGL NDC, Y 위) 그대로 둔다. 여기서 뒤집지 말 것.
+		//    벌칸 보정은 get_projection_vk()가 사본에 적용한다 — 이유는 그쪽 주석 참고.
 		//APP_WMS_CORE_INFO("reized:{0}, {1}, {2}", m_proj_mat[3].x, m_proj_mat[3].y, m_proj_mat[3].z);
 	}
 

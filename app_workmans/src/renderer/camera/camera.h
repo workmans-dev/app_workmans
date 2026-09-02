@@ -2,8 +2,8 @@
 #include "events/applicationEvent.h"
 #include "events/mouseEvent.h"
 #include "events/keyEvent.h"
-#include "events/keyCodes.h"
-#include "events/mouseCodes.h"
+#include "core/keyCode.h"
+#include "core/mouseCode.h"
 
 #include "core/timer.h"
 #include <glm/gtc/matrix_transform.hpp>

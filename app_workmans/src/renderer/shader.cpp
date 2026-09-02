@@ -8,8 +8,10 @@ namespace AppWMs {
 	Ref<Shader> Shader::create(const std::string& filePath)
 	{
 		switch (Renderer::getRenderer()) {
-		case RendererAPI::SelectRenderer::None: APP_WMS_CORE_ASSERTS(false, "Renderer is None");
-		case RendererAPI::SelectRenderer::Vulkan: return std::make_shared<OpenGLShader>(filePath);
+		case RendererAPI::SelectRenderer::None: 
+			APP_WMS_CORE_ASSERTS(false, "Renderer is None");
+		case RendererAPI::SelectRenderer::Vulkan: 
+			return std::make_shared<OpenGLShader>(filePath);
 		}
 		APP_WMS_CORE_ASSERTS(false, "Unknown renderer");
 		return nullptr;
@@ -19,8 +21,10 @@ namespace AppWMs {
 		const std::string& vertexSource, const std::string& fragmentSource)
 	{
 		switch (Renderer::getRenderer()) {
-		case RendererAPI::SelectRenderer::None: APP_WMS_CORE_ASSERTS(false, "Renderer is None");
-		case RendererAPI::SelectRenderer::OpenGL: return std::make_shared< OpenGLShader>(fileName,
+		case RendererAPI::SelectRenderer::None: 
+			APP_WMS_CORE_ASSERTS(false, "Renderer is None");
+		case RendererAPI::SelectRenderer::OpenGL: 
+			return std::make_shared< OpenGLShader>(fileName,
 			vertexSource, fragmentSource);
 		}
 		APP_WMS_CORE_ASSERTS(false, "Unknown renderer");

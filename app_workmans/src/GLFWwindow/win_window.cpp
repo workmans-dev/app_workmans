@@ -26,9 +26,13 @@ namespace AppWMs {
 		init(Win_props);
 	}
 
-	Win_Window::~Win_Window() 
+	Win_Window::~Win_Window()
 	{
 		APP_WMS_PROFILE_FUNC();
+		// ⚠️ 서피스가 이 GLFW 창에서 만들어졌다 → 컨텍스트를 먼저 파괴해야
+		//    vkDestroySurfaceKHR가 살아있는 창을 대상으로 돈다.
+		delete m_context_ptr;
+		m_context_ptr = nullptr;
 		close();
 	}
 
@@ -154,12 +158,7 @@ namespace AppWMs {
 	void Win_Window::setVSync(bool enabled)
 	{
 		APP_WMS_PROFILE_FUNC();
-		if (enabled) {
-			glfwSwapInterval(1);
-		}
-		else {
-			glfwSwapInterval(0);
-		}
+
 		m_data.VSync = enabled;
 	}
 

@@ -1,7 +1,8 @@
 #pragma once
 #include "scene/scene.h"
 #include "scene/entity.h"
-#include "scene/component.h"
+// 직렬화는 모든 컴포넌트 타입을 알아야 한다 → 우산이 정직하다
+#include "scene/components/components.h"
 
 
 namespace AppWMs {

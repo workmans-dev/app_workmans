@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────────────────────────
+#  WORKMANs 단축키 맵
+#
+#  들여쓰기로 그룹을 만들고, 값에 키를 적는다. 코드가 찾는 이름은 그 둘을
+#  점으로 이은 것이다 —  gizmo: / translate: W  →  "gizmo.translate"
+#
+#  키 이름은 core/keyCode.h의 목록과 같다:
+#      A~Z,  D0~D9(숫자),  F1~F25,  KP0~KP9(넘패드),
+#      Space Tab Enter Escape Backspace Delete Insert Home End PageUp PageDown
+#      Left Right Up Down,  LeftShift RightShift LeftControl LeftAlt ...
+#  마우스는 MouseLeft / MouseMiddle / MouseRight.
+#
+#  조합키는 +로 잇는다:  Ctrl+N,  Ctrl+Shift+S,  Shift+P
+#  쓸 수 있는 조합키: Ctrl(=Control), Shift, Alt, Super(=Win)
+#
+#  ⚠️ 조합키는 **정확히 일치**해야 걸린다. 그래서 P와 Shift+P가 서로를
+#     잡아먹지 않는다 — 부분 일치를 허용하면 P가 Shift+P를 먼저 삼킨다.
+#
+#  이 파일이 없거나 문법이 깨지면 앱은 내장 기본값으로 뜨고 콘솔에 경고를 찍는다.
+#  (키맵 오타 하나로 편집기를 못 켜는 상황을 만들지 않는다)
+# ─────────────────────────────────────────────────────────────
+
+# 기즈모 조작 모드 — 마야와 같은 배치 (Q 해제 / W 이동 / E 회전 / R 스케일)
+gizmo:
+  none:       Q
+  translate:  W
+  rotate:     E
+  scale:      R
+
+file:
+  newScene:     Ctrl+N
+  openScene:    Ctrl+O
+  saveAsScene:  Ctrl+Shift+S
+
+app:
+  exit:       Ctrl+Q
+
+# 계층 — 마야 규약.
+# 자식들을 먼저 고르고 **부모를 마지막에** 고른 뒤 parent를 누른다.
+hierarchy:
+  parent:     P
+  unparent:   Shift+P
+
+edit:
+  delete:     Delete
+
+visibility:
+  hide:       Ctrl+H
+  show:       Shift+H
+
+# 카메라 — 마야 규약. modifier를 누른 채로 마우스 버튼을 끈다.
+#   tumble = 궤도 회전 / track = 평행 이동 / dolly = 전후 이동
+camera:
+  modifier:   LeftAlt
+  tumble:     MouseLeft
+  track:      MouseMiddle
+  dolly:      MouseRight

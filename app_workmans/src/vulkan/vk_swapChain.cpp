@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "vulkan/vk_swapChain.h"
 #include <GLFW/glfw3.h>
-#include "vulkan/vk_init.h"
+
 
 namespace AppWMs {
     namespace VulkanSwapChain {
@@ -62,8 +62,70 @@ namespace AppWMs {
             }
         }
 
+        // 4-1. 범용 이미지뷰 생성기
+        VkImageView CreateImageView(VkDevice device, VkImage image,
+            VkFormat format, VkImageAspectFlags aspectFlags) {
+
+            VkImageViewCreateInfo viewInfo{};
+            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.image = image;
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            viewInfo.format = format;
+
+            viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+            viewInfo.subresourceRange.aspectMask = aspectFlags;
+            viewInfo.subresourceRange.baseMipLevel = 0;
+            viewInfo.subresourceRange.levelCount = 1;
+            viewInfo.subresourceRange.baseArrayLayer = 0;
+            viewInfo.subresourceRange.layerCount = 1;
+
+            VkImageView view = VK_NULL_HANDLE;
+            if (vkCreateImageView(device, &viewInfo, nullptr, &view) != VK_SUCCESS) {
+                APP_WMS_CORE_ERROR("ImageView 생성 실패!");
+                return VK_NULL_HANDLE;
+            }
+            return view;
+        }
+
+        // 4-2. 하드웨어 지원 포맷 탐색
+        VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,
+            const std::vector<VkFormat>& candidates,
+            VkImageTiling tiling, VkFormatFeatureFlags features) {
+
+            for (VkFormat format : candidates) {
+                VkFormatProperties props;
+                vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+                if (tiling == VK_IMAGE_TILING_LINEAR &&
+                    (props.linearTilingFeatures & features) == features) {
+                    return format;
+                }
+                if (tiling == VK_IMAGE_TILING_OPTIMAL &&
+                    (props.optimalTilingFeatures & features) == features) {
+                    return format;
+                }
+            }
+            APP_WMS_CORE_ERROR("지원되는 포맷을 찾지 못함!");
+            return VK_FORMAT_UNDEFINED;
+        }
+
+        // 4-3. 깊이 포맷 우선순위: 정밀도 높은 순, 스텐실 없는 것 우선
+        VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice) {
+            return FindSupportedFormat(physicalDevice,
+                { VK_FORMAT_D32_SFLOAT,
+                  VK_FORMAT_D32_SFLOAT_S8_UINT,
+                  VK_FORMAT_D24_UNORM_S8_UINT },
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        }
+
         // 5. 메인 스왑체인 최종 조립 함수
-        VkSwapchainKHR CreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, GLFWwindow* window) {
+        SwapChainBundle CreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device,
+            VkSurfaceKHR surface, GLFWwindow* window, const VulkanInit::QueueFamilyIndices& indices) {
             SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(physicalDevice, surface);
 
             VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -85,8 +147,7 @@ namespace AppWMs {
             createInfo.imageArrayLayers = 1;
             createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            // 🔥 핵심 수정 완료: vk_init 본가에서 번호표 제대로 빼오기
-            AppWMs::VulkanInit::QueueFamilyIndices indices = AppWMs::VulkanInit::FindQueueFamilies(physicalDevice, surface);
+            // get all information from vk_init and set -------------------
             uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
             if (indices.graphicsFamily != indices.presentFamily) {
@@ -105,13 +166,49 @@ namespace AppWMs {
             createInfo.presentMode = presentMode;
             createInfo.clipped = VK_TRUE;
             createInfo.oldSwapchain = VK_NULL_HANDLE;
+            // ------------------------------------------------------------------------
 
-            VkSwapchainKHR swapChain;
-            if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-                return VK_NULL_HANDLE;
+            SwapChainBundle bundle;
+            if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &bundle.handle) != VK_SUCCESS) {
+                return {};
+            }
+            bundle.format = surfaceFormat.format;
+            bundle.extent = extent;
+
+            uint32_t actualImageCount = 0;
+            vkGetSwapchainImagesKHR(device, bundle.handle, &actualImageCount, nullptr);
+            bundle.images.resize(actualImageCount);
+            vkGetSwapchainImagesKHR(device, bundle.handle, &actualImageCount, bundle.images.data());
+
+            // 🟢 각 스왑체인 이미지를 컬러 뷰로 감싸기
+            bundle.imageViews.resize(actualImageCount);
+            for (uint32_t i = 0; i < actualImageCount; i++) {
+                bundle.imageViews[i] = CreateImageView(device, bundle.images[i],
+                    bundle.format, VK_IMAGE_ASPECT_COLOR_BIT);
             }
 
-            return swapChain;
+            APP_WMS_CORE_INFO("SwapChain: {0} images/views created ({1}x{2})",
+                actualImageCount, bundle.extent.width, bundle.extent.height);
+
+            return bundle;
+        }
+
+        // 6. 파괴 — 재생성과 종료가 공유한다
+        void DestroySwapChain(VkDevice device, SwapChainBundle& bundle) {
+            for (VkImageView view : bundle.imageViews) {
+                if (view != VK_NULL_HANDLE) vkDestroyImageView(device, view, nullptr);
+            }
+            bundle.imageViews.clear();
+
+            // images는 vkGetSwapchainImagesKHR로 "받아온" 드라이버 소유 핸들이라
+            // 개별 파괴하지 않는다. 스왑체인이 사라지면 같이 무효가 된다.
+            bundle.images.clear();
+
+            if (bundle.handle != VK_NULL_HANDLE) {
+                vkDestroySwapchainKHR(device, bundle.handle, nullptr);
+                bundle.handle = VK_NULL_HANDLE;
+            }
+            bundle.extent = { 0, 0 };
         }
     }
 }

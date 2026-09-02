@@ -1,144 +1,157 @@
 #pragma once
 #include <stdint.h>
+
 namespace AppWMs
 {
 	using KeyCode = uint16_t;
+
+	// ─────────────────────────────────────────────────────────────
+	//  키 목록 — **단일 원본**
+	//
+	//  아래 enum과 keyMap.cpp의 "문자열 → 코드" 사전이 둘 다 이 목록에서 생성된다.
+	//  목록을 두 벌 두면 키를 추가할 때 한쪽만 고쳐서, enum엔 있는데 keymap.yaml에선
+	//  못 쓰는 키가 조용히 생긴다. 한 목록에서 뽑으면 그 어긋남이 원리적으로 불가능하다.
+	//
+	//  여기 적힌 이름이 곧 keymap.yaml에 쓰는 이름이다 ("LeftShift", "F1", "D0"...).
+	//  값은 glfw3.h에서 왔다.
+	//
+	//  ⚠️ 매개변수 이름이 흔한 X가 아니라 WMS_X인 이유 — 목록 안에 알파벳 X 키가 있다.
+	//     매개변수를 X로 두면 `X(X, 88)` 줄의 **두 번째 X까지** 치환되어
+	//     `Key::<전달한 매크로 이름>` 같은 소리가 나온다. 실제로 그 에러를 밟았다.
+	//
+	//  ⚠️ 예전엔 events/keyCodes.h가 GLFW 매크로(#define WMS_KEY_P 80)를 그대로
+	//     베껴 썼는데, 매크로는 전처리 단계에서 사라져 런타임에 이름이 안 남는다.
+	//     그래서 YAML에서 읽은 "P"를 코드로 되돌릴 방법이 없었다. 그 파일은 제거했다.
+	// ─────────────────────────────────────────────────────────────
+#define WMS_KEY_LIST(WMS_X)          \
+	WMS_X(Space,        32)          \
+	WMS_X(Apostrophe,   39)          \
+	WMS_X(Comma,        44)          \
+	WMS_X(Minus,        45)          \
+	WMS_X(Period,       46)          \
+	WMS_X(Slash,        47)          \
+	WMS_X(D0,           48)          \
+	WMS_X(D1,           49)          \
+	WMS_X(D2,           50)          \
+	WMS_X(D3,           51)          \
+	WMS_X(D4,           52)          \
+	WMS_X(D5,           53)          \
+	WMS_X(D6,           54)          \
+	WMS_X(D7,           55)          \
+	WMS_X(D8,           56)          \
+	WMS_X(D9,           57)          \
+	WMS_X(Semicolon,    59)          \
+	WMS_X(Equal,        61)          \
+	WMS_X(A,            65)          \
+	WMS_X(B,            66)          \
+	WMS_X(C,            67)          \
+	WMS_X(D,            68)          \
+	WMS_X(E,            69)          \
+	WMS_X(F,            70)          \
+	WMS_X(G,            71)          \
+	WMS_X(H,            72)          \
+	WMS_X(I,            73)          \
+	WMS_X(J,            74)          \
+	WMS_X(K,            75)          \
+	WMS_X(L,            76)          \
+	WMS_X(M,            77)          \
+	WMS_X(N,            78)          \
+	WMS_X(O,            79)          \
+	WMS_X(P,            80)          \
+	WMS_X(Q,            81)          \
+	WMS_X(R,            82)          \
+	WMS_X(S,            83)          \
+	WMS_X(T,            84)          \
+	WMS_X(U,            85)          \
+	WMS_X(V,            86)          \
+	WMS_X(W,            87)          \
+	WMS_X(X,            88)          \
+	WMS_X(Y,            89)          \
+	WMS_X(Z,            90)          \
+	WMS_X(LeftBracket,  91)          \
+	WMS_X(Backslash,    92)          \
+	WMS_X(RightBracket, 93)          \
+	WMS_X(GraveAccent,  96)          \
+	WMS_X(World1,       161)         \
+	WMS_X(World2,       162)         \
+	WMS_X(Escape,       256)         \
+	WMS_X(Enter,        257)         \
+	WMS_X(Tab,          258)         \
+	WMS_X(Backspace,    259)         \
+	WMS_X(Insert,       260)         \
+	WMS_X(Delete,       261)         \
+	WMS_X(Right,        262)         \
+	WMS_X(Left,         263)         \
+	WMS_X(Down,         264)         \
+	WMS_X(Up,           265)         \
+	WMS_X(PageUp,       266)         \
+	WMS_X(PageDown,     267)         \
+	WMS_X(Home,         268)         \
+	WMS_X(End,          269)         \
+	WMS_X(CapsLock,     280)         \
+	WMS_X(ScrollLock,   281)         \
+	WMS_X(NumLock,      282)         \
+	WMS_X(PrintScreen,  283)         \
+	WMS_X(Pause,        284)         \
+	WMS_X(F1,           290)         \
+	WMS_X(F2,           291)         \
+	WMS_X(F3,           292)         \
+	WMS_X(F4,           293)         \
+	WMS_X(F5,           294)         \
+	WMS_X(F6,           295)         \
+	WMS_X(F7,           296)         \
+	WMS_X(F8,           297)         \
+	WMS_X(F9,           298)         \
+	WMS_X(F10,          299)         \
+	WMS_X(F11,          300)         \
+	WMS_X(F12,          301)         \
+	WMS_X(F13,          302)         \
+	WMS_X(F14,          303)         \
+	WMS_X(F15,          304)         \
+	WMS_X(F16,          305)         \
+	WMS_X(F17,          306)         \
+	WMS_X(F18,          307)         \
+	WMS_X(F19,          308)         \
+	WMS_X(F20,          309)         \
+	WMS_X(F21,          310)         \
+	WMS_X(F22,          311)         \
+	WMS_X(F23,          312)         \
+	WMS_X(F24,          313)         \
+	WMS_X(F25,          314)         \
+	WMS_X(KP0,          320)         \
+	WMS_X(KP1,          321)         \
+	WMS_X(KP2,          322)         \
+	WMS_X(KP3,          323)         \
+	WMS_X(KP4,          324)         \
+	WMS_X(KP5,          325)         \
+	WMS_X(KP6,          326)         \
+	WMS_X(KP7,          327)         \
+	WMS_X(KP8,          328)         \
+	WMS_X(KP9,          329)         \
+	WMS_X(KPDecimal,    330)         \
+	WMS_X(KPDivide,     331)         \
+	WMS_X(KPMultiply,   332)         \
+	WMS_X(KPSubtract,   333)         \
+	WMS_X(KPAdd,        334)         \
+	WMS_X(KPEnter,      335)         \
+	WMS_X(KPEqual,      336)         \
+	WMS_X(LeftShift,    340)         \
+	WMS_X(LeftControl,  341)         \
+	WMS_X(LeftAlt,      342)         \
+	WMS_X(LeftSuper,    343)         \
+	WMS_X(RightShift,   344)         \
+	WMS_X(RightControl, 345)         \
+	WMS_X(RightAlt,     346)         \
+	WMS_X(RightSuper,   347)         \
+	WMS_X(Menu,         348)
 
 	namespace Key
 	{
 		enum : KeyCode
 		{
-			// From glfw3.h
-			Space = 32,
-			Apostrophe = 39, /* ' */
-			Comma = 44, /* , */
-			Minus = 45, /* - */
-			Period = 46, /* . */
-			Slash = 47, /* / */
-
-			D0 = 48, /* 0 */
-			D1 = 49, /* 1 */
-			D2 = 50, /* 2 */
-			D3 = 51, /* 3 */
-			D4 = 52, /* 4 */
-			D5 = 53, /* 5 */
-			D6 = 54, /* 6 */
-			D7 = 55, /* 7 */
-			D8 = 56, /* 8 */
-			D9 = 57, /* 9 */
-
-			Semicolon = 59, /* ; */
-			Equal = 61, /* = */
-
-			A = 65,
-			B = 66,
-			C = 67,
-			D = 68,
-			E = 69,
-			F = 70,
-			G = 71,
-			H = 72,
-			I = 73,
-			J = 74,
-			K = 75,
-			L = 76,
-			M = 77,
-			N = 78,
-			O = 79,
-			P = 80,
-			Q = 81,
-			R = 82,
-			S = 83,
-			T = 84,
-			U = 85,
-			V = 86,
-			W = 87,
-			X = 88,
-			Y = 89,
-			Z = 90,
-
-			LeftBracket = 91,  /* [ */
-			Backslash = 92,  /* \ */
-			RightBracket = 93,  /* ] */
-			GraveAccent = 96,  /* ` */
-
-			World1 = 161, /* non-US #1 */
-			World2 = 162, /* non-US #2 */
-
-			/* Function keys */
-			Escape = 256,
-			Enter = 257,
-			Tab = 258,
-			Backspace = 259,
-			Insert = 260,
-			Delete = 261,
-			Right = 262,
-			Left = 263,
-			Down = 264,
-			Up = 265,
-			PageUp = 266,
-			PageDown = 267,
-			Home = 268,
-			End = 269,
-			CapsLock = 280,
-			ScrollLock = 281,
-			NumLock = 282,
-			PrintScreen = 283,
-			Pause = 284,
-			F1 = 290,
-			F2 = 291,
-			F3 = 292,
-			F4 = 293,
-			F5 = 294,
-			F6 = 295,
-			F7 = 296,
-			F8 = 297,
-			F9 = 298,
-			F10 = 299,
-			F11 = 300,
-			F12 = 301,
-			F13 = 302,
-			F14 = 303,
-			F15 = 304,
-			F16 = 305,
-			F17 = 306,
-			F18 = 307,
-			F19 = 308,
-			F20 = 309,
-			F21 = 310,
-			F22 = 311,
-			F23 = 312,
-			F24 = 313,
-			F25 = 314,
-
-			/* Keypad */
-			KP0 = 320,
-			KP1 = 321,
-			KP2 = 322,
-			KP3 = 323,
-			KP4 = 324,
-			KP5 = 325,
-			KP6 = 326,
-			KP7 = 327,
-			KP8 = 328,
-			KP9 = 329,
-			KPDecimal = 330,
-			KPDivide = 331,
-			KPMultiply = 332,
-			KPSubtract = 333,
-			KPAdd = 334,
-			KPEnter = 335,
-			KPEqual = 336,
-
-			LeftShift = 340,
-			LeftControl = 341,
-			LeftAlt = 342,
-			LeftSuper = 343,
-			RightShift = 344,
-			RightControl = 345,
-			RightAlt = 346,
-			RightSuper = 347,
-			Menu = 348
+#define WMS_KEY_ENUM_ENTRY(name, value) name = value,
+			WMS_KEY_LIST(WMS_KEY_ENUM_ENTRY)
+#undef WMS_KEY_ENUM_ENTRY
 		};
 	}
 }

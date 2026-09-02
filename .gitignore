@@ -54,3 +54,16 @@ Thumbs.db
 *.ini
 *.vcxproj
 *.vcxproj.filters
+
+
+bin/
+*.obj
+*.log
+*.pdb
+*.idb
+*.tlog
+Debug/
+Release/
+
+# 빌드 산출물 — compile_shaders.bat이 GLSL 원본에서 매 빌드마다 생성한다
+*.spv

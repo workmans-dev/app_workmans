@@ -8,9 +8,19 @@ namespace AppWMs {
 	}
 
 	LayerStack::~LayerStack() {
+		clear();
+	}
+
+	void LayerStack::clear() {
+		// ⚠️ 벡터 순서가 곧 파괴 의존 순서다. 뒤집으면 안 된다.
+		//    [MainWindow, ImGuiLayer] 순이라 FrameBuffer가 ImGui 벌칸 백엔드보다 먼저 파괴된다.
+		//    ~VulkanRenderTarget이 ImGui_ImplVulkan_RemoveTexture를 부르므로 이 순서여야 한다.
 		for (Layer* layer : m_layers) {
+			layer->onDetach();   // 예전엔 호출되지 않아 ImGui_ImplVulkan_Shutdown이 실행 안 됐다
 			delete layer;
 		}
+		m_layers.clear();
+		m_layer_insert_index = 0;
 	}
 
 	void LayerStack::pushLayer(Layer* layer) {

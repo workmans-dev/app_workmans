@@ -3,8 +3,8 @@
 #include "events/mouseEvent.h"
 #include "events/keyEvent.h"
 #include "events/applicationEvent.h"
-#include "GLFWwindow/win_window.h"
 
+struct GLFWwindow;
 namespace AppWMs {
 	class ImGuiLayer :public Layer {
 	public:
@@ -14,7 +14,7 @@ namespace AppWMs {
 		virtual void onEvent(Event& event) override;		
 		virtual void onDetach() override;
 
-		void InitVulkanBackend();
+		void InitVulkanBackend(GLFWwindow* window);
 		void blockEvent(bool fact) { pm_eventBlocking = fact; };
 		void begin();
 		void end();

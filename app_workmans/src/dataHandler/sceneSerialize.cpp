@@ -75,6 +75,30 @@ namespace AppWMs {
 		}
 	}
 
+	// 트랜스폼 로드. 두 경로(기존 기본 카메라 재사용 / 새 엔티티 생성)가 같은 규칙을
+	// 써야 해서 함수로 뺐다 — 한쪽만 고치면 저장은 되는데 로드가 반만 되는 버그가 난다.
+	static void load_transform_data_fromFile(const YAML::Node& transComp_data, TransformComponent& transComp)
+	{
+		transComp.translate = transComp_data["Translate"].as<glm::vec3>();
+		transComp.scale = transComp_data["Scale"].as<glm::vec3>();
+
+		// ⚠️ 모드를 값보다 **먼저** 세운다. setRotationMode는 "회전을 유지하며 표현만
+		//    바꾸는" 함수라, 값을 넣은 뒤에 부르면 방금 읽은 값을 변환해 덮어쓴다.
+		//    먼저 부르면 그 변환 결과는 바로 아래 대입이 전부 덮으므로 무해하다.
+		//    옛 .wmsa엔 이 키가 없다 → 기본값(XYZ Euler) 유지 = 하위 호환.
+		if (transComp_data["RotationMode"])
+			transComp.setRotationMode((RotationMode)transComp_data["RotationMode"].as<int>());
+
+		transComp.rotate = transComp_data["Rotate"].as<glm::vec3>();
+
+		if (transComp_data["RotateQuat"]) {
+			// 파일엔 [w, x, y, z] 순으로 적혀 있다. glm::quat 생성자도 (w,x,y,z)다.
+			// (메모리 배치는 (x,y,z,w)라 캐스팅으로 넘기면 뒤집힌다)
+			const glm::vec4 packed = transComp_data["RotateQuat"].as<glm::vec4>();
+			transComp.rotateQuat = glm::quat(packed[0], packed[1], packed[2], packed[3]);
+		}
+	}
+
 	YAML::Emitter& operator << (YAML::Emitter& out, const glm::vec3& vec) {
 		out << YAML::Flow;
 		out << YAML::BeginSeq << vec.x << vec.y << vec.z << YAML::EndSeq;
@@ -90,7 +114,10 @@ namespace AppWMs {
 	static void serializeComponent(YAML::Emitter& out, Entity& entity, BeginMap insert) {
 		if (entity.hasComponent<T>()) {
 			auto& comp = entity.getComponent<T>();
-			out << YAML::Key << comp.typeName << YAML::BeginMap;
+			// 타입 이름은 컴파일 타임 상수다. 예전엔 컴포넌트마다 std::string으로
+			// 들고 있었는데, ECS 배열에 인스턴스당 32바이트(+ 힙)를 얹는 낭비였다.
+			// 방출되는 문자열은 동일하므로 .wmsa 포맷은 그대로다.
+			out << YAML::Key << T::TypeName() << YAML::BeginMap;
 			insert(comp);
 			//out << YAML::Key << keyName << YAML::Value << tagComp.name;
 			out << YAML::EndMap;
@@ -117,6 +144,14 @@ namespace AppWMs {
 					out << YAML::Key << "Translate" << YAML::Value << comp.translate;
 					out << YAML::Key << "Rotate" << YAML::Value << comp.rotate;
 					out << YAML::Key << "Scale" << YAML::Value << comp.scale;
+					// 회전 모드와 쿼터니언은 새 필드다. 옛 .wmsa엔 없으므로
+					// 로드 쪽이 없을 때 기본값(XYZ Euler)으로 떨어지게 해뒀다.
+					out << YAML::Key << "RotationMode" << YAML::Value << (int)comp.getRotationMode();
+					// ⚠️ vec4로 적되 순서는 (w,x,y,z)다. glm::quat의 메모리 배치는
+					//    (x,y,z,w)라 무심코 캐스팅하면 뒤집힌다.
+					out << YAML::Key << "RotateQuat" << YAML::Value
+						<< glm::vec4(comp.rotateQuat.w, comp.rotateQuat.x,
+							comp.rotateQuat.y, comp.rotateQuat.z);
 					});
 				serializeComponent<CameraMatrixComponent>(out, entity, [&out](auto& comp) {
 					const int& camType = (int)comp.sceneCam.get_camProjType();
@@ -181,15 +216,17 @@ namespace AppWMs {
 				auto& transComp = name_camEntity_map[camName_data].getComponent<TransformComponent>();
 				
 				load_camComp_data_fromFile(entity_data["CameraMatrixComponent"], camComp);
-				if (entity_data["TransformComponent"]) {
-					const auto& transComp_data = entity_data["TransformComponent"];
-					transComp.translate = transComp_data["Translate"].as<glm::vec3>();;
-					transComp.rotate = transComp_data["Rotate"].as<glm::vec3>();
-					transComp.scale = transComp_data["Scale"].as<glm::vec3>();
-				}
+				if (entity_data["TransformComponent"])
+					load_transform_data_fromFile(entity_data["TransformComponent"], transComp);
 			}
 			else {
-				Entity entity = pm_scene->createEntity(camName_data);
+				// ⚠️ "무슨 종류인가"를 파일에 따로 저장하지 않는다 — 어떤 컴포넌트가
+				//    들어 있는지가 그 질문의 답이다. TransformComponent가 있으면
+				//    공간에 있는 오브젝트고, 없으면 위치 없는 엔티티(모디파이어 등)다.
+				//    종류 필드를 따로 두면 그 필드와 실제 구성이 어긋날 수 있다.
+				Entity entity = entity_data["TransformComponent"]
+					? pm_scene->createObject(camName_data)
+					: pm_scene->createEntity(camName_data);
 				if (entity_data["CameraMatrixComponent"]) {
 					auto& new_camComp = entity.addComponent<CameraMatrixComponent>();
 					//entity.addComponent<NativeScriptComponent>().bind<CameraController>();
@@ -197,18 +234,15 @@ namespace AppWMs {
 					pm_scene->pm_cam_entities.emplace_back(entity);
 					pm_scene->pm_cameraViewArray.emplace_back(camName_data);
 				}
-				if (entity_data["TransformComponent"]) {
-					const auto& transComp_data = entity_data["TransformComponent"];
-					auto& new_transComp = entity.getComponent<TransformComponent>();
-					new_transComp.translate = transComp_data["Translate"].as<glm::vec3>();;
-					new_transComp.rotate = transComp_data["Rotate"].as<glm::vec3>();
-					new_transComp.scale = transComp_data["Scale"].as<glm::vec3>();
-				}
+				if (entity_data["TransformComponent"])
+					load_transform_data_fromFile(entity_data["TransformComponent"],
+						entity.getComponent<TransformComponent>());
 				if (entity_data["ShadingComponent"]) {
 					auto& shadingComp_data = entity_data["ShadingComponent"];
 					entity.addComponent<ShadingComponent>(shadingComp_data["Color"].as<glm::vec4>());
 				}
-				if (entity_data["VisComponent"]) {
+				// VisComponent는 오브젝트에만 붙는다 (createObject가 얹는다).
+				if (entity_data["VisComponent"] && entity.hasComponent<VisComponent>()) {
 					auto& visComp_data = entity_data["VisComponent"];
 					entity.getComponent<VisComponent>().visible = visComp_data["Visible"].as<int>();
 				}

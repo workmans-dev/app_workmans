@@ -2,8 +2,9 @@
 #include "events/applicationEvent.h"
 #include "events/mouseEvent.h"
 #include "events/keyEvent.h"
-#include "events/keyCodes.h"
-#include "events/mouseCodes.h"
+#include "core/keyCode.h"
+#include "core/mouseCode.h"
+#include "core/input/keyMap.h"
 
 #include "core/timer.h"
 #include "core/input.h"
@@ -23,7 +24,26 @@ namespace AppWMs {
 		CameraController()=default;
 		//
 		virtual ~CameraController()=default;
+		// ⚠️ 투영이 두 벌인 이유 — 소비자가 요구하는 NDC 규약이 다르다.
+		//    통합하려 들지 말 것. 한 번 통합했다가 기즈모가 반대로 움직였다.
+		//
+		//  get_projection()     glm 원본. OpenGL NDC(Y 위).
+		//                       → ImGuizmo 같은 CPU측 라이브러리용.
+		//                         ImGuizmo는 worldToPos에서 `trans.y = 1 - trans.y`로
+		//                         Y를 스스로 뒤집는다(ImGuizmo.cpp:819). 여기에 이미
+		//                         뒤집힌 행렬을 주면 두 번 뒤집혀 방향이 반대가 된다.
+		//
+		//  get_projection_vk()  Y를 뒤집은 사본. 벌칸 NDC(Y 아래).
+		//                       → 렌더 파이프라인용. 이걸 안 쓰면 화면이 상하 반전된다.
+		//                         이 반전 때문에 화면상 감기도 뒤집히므로
+		//                         PipelineSpec의 frontFace 기본값(CCW)이 여기에 묶여 있다.
 		const glm::mat4& get_projection() const { return m_proj_mat; }
+
+		glm::mat4 get_projection_vk() const {
+			glm::mat4 proj = m_proj_mat;
+			proj[1][1] *= -1.0f;
+			return proj;
+		}
 		//void bind() { std::cout << "from Camera class" << std::endl; }
 
 
