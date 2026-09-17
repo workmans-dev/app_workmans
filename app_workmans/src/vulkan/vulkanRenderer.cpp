@@ -203,15 +203,23 @@ namespace AppWMs {
         // 추후 (VK_DYNAMIC_STATE_LINE_WIDTH)
     }
 
-    void VulkanRendererAPI::pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model) {
+    void VulkanRendererAPI::pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model,
+        int32_t entityID) {
         if (!m_CurrentPipeline) {
             APP_WMS_CORE_ERROR("pushObjectMatrices: 바인딩된 파이프라인이 없다");
             return;
         }
-        // cube.vert의 Push 블록 순서와 같아야 한다: mat4 u_MVP; mat4 u_Model;
-        const glm::mat4 data[2] = { mvp, model };
+        // ⚠️ cube.vert/frag의 Push 블록과 바이트 단위로 같아야 한다.
+        //    어긋나면 컴파일도 validation도 통과하는데 화면만 조용히 깨진다.
+        struct Push {
+            glm::mat4 mvp;        //   0..63
+            glm::mat4 model;      //  64..127
+            int32_t   entityID;   // 128..131
+        } data{ mvp, model, entityID };
+        static_assert(sizeof(Push) == 132, "cube.vert/frag의 Push 블록과 크기가 어긋났다");
+
         m_CurrentPipeline->pushConstants(
-            VulkanContext::Get()->getCurrentCommandBuffer(), data, sizeof(data));
+            VulkanContext::Get()->getCurrentCommandBuffer(), &data, sizeof(data));
     }
 
     void VulkanRendererAPI::waitIdle() {

@@ -22,8 +22,9 @@ namespace AppWMs {
 		inline static void drawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount=0) {
 			pm_rendererAPI_ptr->drawIndexed(vertexArray, indexCount);
 		}
-		inline static void pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model) {
-			pm_rendererAPI_ptr->pushObjectMatrices(mvp, model);
+		inline static void pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model,
+			int32_t entityID) {
+			pm_rendererAPI_ptr->pushObjectMatrices(mvp, model, entityID);
 		}
 		inline static void waitIdle() { pm_rendererAPI_ptr->waitIdle(); }
 		inline static void shutdown() { pm_rendererAPI_ptr->shutdown(); }

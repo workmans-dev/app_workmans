@@ -49,6 +49,11 @@ namespace AppWMs {
 		SceneCamera::CameraProjType type_=SceneCamera::CameraProjType::perspective;
 		int pm_manipulatorType = -1;
 
+		// ⚠️ 피킹은 클릭과 결과가 몇 프레임 떨어져 있다(GPU 리드백). 그래서 조합키를
+		//    **누른 순간**에 읽어 여기 들고 있다가, 결과가 익었을 때 그걸 쓴다.
+		//    결과가 온 시점에 다시 읽으면 이미 손을 뗀 뒤라 Shift가 사라져 있다.
+		SelectMode pm_pendingPickMode = SelectMode::Replace;
+
 	};
 
 }

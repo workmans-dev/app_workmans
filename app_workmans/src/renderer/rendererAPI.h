@@ -26,7 +26,11 @@ namespace AppWMs {
 		// 🟢 오브젝트별 변환 행렬 전달.
 		//    벌칸 구현은 현재 바인딩된 파이프라인의 push constant로 보낸다.
 		//    머티리얼(UBO/디스크립터셋)이 생기면 이 자리가 그쪽으로 확장된다.
-		virtual void pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model) = 0;
+		//    entityID는 피킹용 id 버퍼에 찍힐 값이다. -1이 "없음"이고, 그 비트패턴이
+		//    entt::null과 같아서 읽은 값을 그대로 엔티티로 되돌릴 수 있다.
+		//    ⚠️ 여기서 entt 타입을 쓰지 않는 건 의도적이다 — 렌더러는 씬을 모른다.
+		virtual void pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model,
+			int32_t entityID) = 0;
 		// 🟢 GPU가 제출된 작업을 다 끝낼 때까지 대기.
 		//    종료 시 리소스 파괴 전에 한 번 불러 사용 중 핸들 파괴를 막는다.
 		virtual void waitIdle() = 0;

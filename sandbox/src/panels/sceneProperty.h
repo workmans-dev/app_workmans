@@ -8,6 +8,17 @@
 
 namespace AppWMs {
 
+	// 선택 조작 방식 — 마야 규약. 아웃라이너와 뷰포트가 **같은 표**를 쓴다.
+	// 패널마다 규칙이 다르면 손이 못 외운다.
+	//
+	//   클릭            Replace   기존 선택을 버리고 이것만
+	//   Shift+클릭      Toggle    골라져 있으면 빼고, 아니면 넣는다
+	//   Ctrl+클릭       Subtract  빼기만
+	//   Ctrl+Shift+클릭 Add       넣기만
+	//
+	// ⚠️ 실제 조합키는 여기 없다 — keymap.yaml의 select 그룹이 정한다.
+	enum class SelectMode { Replace, Toggle, Add, Subtract };
+
 	class SceneProperties {
 	public:
 		SceneProperties() = default;
@@ -41,6 +52,17 @@ namespace AppWMs {
 		// parent의 부모가 되는 대상도 이것이다. 하나로 통일해야 헷갈리지 않는다.
 		Entity* get_activeEntity();
 
+		// 지금 눌려 있는 조합키가 어떤 선택 방식인가. keymap.yaml의 select 그룹을
+		// 조회하므로 키를 바꾸면 아웃라이너와 뷰포트가 **같이** 바뀐다.
+		static SelectMode selectModeFromMods();
+
+		// 🟢 뷰포트 피킹(P-b) 결과를 선택에 반영한다.
+		//    handle이 entt::null이면 빈 곳을 클릭한 것이다.
+		//
+		// ⚠️ mode는 **클릭한 순간**의 것을 넘겨야 한다. 리드백이 몇 프레임 뒤에
+		//    오므로 그때 다시 조합키를 읽으면 이미 손을 뗀 뒤일 수 있다.
+		void applyPickSelection(entt::entity handle, SelectMode mode);
+
 	private:
 		// 선택 조작 — 클릭 처리부가 트리 순회 안으로 들어가도(K-b) 그대로 재사용된다.
 		void drawNameField(Entity& entity);
@@ -48,7 +70,7 @@ namespace AppWMs {
 		void drawModifierTab(Entity& entity);   // 이 물건에 거는 연산 — Mirror / Skin ... (🚧 미구현)
 
 		bool isSelected(const Entity& e) const;
-		void handleSelectionClick(const Entity& e, bool additive);
+		void handleSelectionClick(const Entity& e, SelectMode mode);
 		// 삭제로 사라진 핸들을 선택 목록에서 걷어낸다.
 		void pruneInvalidSelection();
 		void deleteSelected();

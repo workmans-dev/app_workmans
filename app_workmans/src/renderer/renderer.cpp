@@ -26,11 +26,12 @@ namespace AppWMs {
 		pm_cameraViewProj = viewProj;
 	}
 
-	void Renderer::submit(const Ref<VertexArray>& vertexArray, const glm::mat4& model)
+	void Renderer::submit(const Ref<VertexArray>& vertexArray, const glm::mat4& model,
+		int32_t entityID)
 	{
 		// MVP를 여기서 합성해 오브젝트당 push constant 한 번으로 보낸다.
 		// 뷰·투영은 beginScene에서 이미 곱해져 있으므로 모델만 더하면 된다.
-		RendererCommand::pushObjectMatrices(pm_cameraViewProj * model, model);
+		RendererCommand::pushObjectMatrices(pm_cameraViewProj * model, model, entityID);
 		RendererCommand::drawIndexed(vertexArray);
 	}
 

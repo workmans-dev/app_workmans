@@ -9,6 +9,9 @@ namespace AppWMs {
     enum class AttachmentFormat {
         None = 0,
         RGBA8,          // 색
+        // 🟢 P-a — 피킹용 엔티티 id 버퍼. 색이 아니라 데이터라 ImGui가 샘플링하지
+        //    않는다. 빈 곳은 -1로 clear되고, 그 비트패턴이 entt::null과 같다.
+        R32SINT,
         DEPTHSTENCIL8,  // 깊이(+스텐실)
         Depth = DEPTHSTENCIL8
     };
@@ -46,5 +49,19 @@ namespace AppWMs {
         // ImGui::Image()에 그대로 넘길 텍스처 핸들.
         // 벌칸은 VkDescriptorSet(64비트) → ImTextureID(ImU64)와 폭을 맞춘다.
         virtual uint64_t getColorTextureID(int index = 0) const = 0;
+
+        // 🟢 P-b — 정수 어태치먼트(R32_SINT)에서 픽셀 한 개를 CPU로 읽어온다.
+        //
+        // ⚠️ **결과가 즉시 나오지 않는다.** 요청과 수확이 갈라진 건 취향이 아니라
+        //    강제다: 방금 그린 픽셀을 지금 읽으려면 GPU가 그 프레임을 끝낼 때까지
+        //    기다려야 하고, 그러면 파이프라인이 비어 프레임이 선다.
+        //    그래서 복사만 예약해두고 몇 프레임 뒤에 꺼낸다.
+        //
+        // (x, y)는 어태치먼트 좌상단 기준 텍셀 좌표다. 범위를 벗어나면 무시된다.
+        virtual void requestPixelRead(int attachmentIndex, uint32_t x, uint32_t y) = 0;
+
+        // 준비된 값이 있으면 꺼내고 true. 없으면 건드리지 않고 false.
+        // 한 번 꺼내면 사라진다 — 매 프레임 불러도 같은 값이 반복되지 않는다.
+        virtual bool pollPixelRead(int32_t& outValue) = 0;
     };
 }

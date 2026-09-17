@@ -153,14 +153,52 @@ namespace AppWMs {
 		ImGui::Image((ImTextureID)pm_viewportTarget->getColorTextureID(),
 			ImVec2{ pm_viewportSize.x, pm_viewportSize.y });
 
+		// ⚠️ IsItemHovered는 Image() 바로 뒤여야 한다 — 다른 아이템을 그리면
+		//    "마지막 아이템"이 그쪽으로 넘어간다 (아웃라이너 트리와 같은 함정).
+		const bool imageHovered = ImGui::IsItemHovered();
+
 		// ⭐️ 방금 그린 이미지가 화면에서 차지한 실제 사각형.
 		//    툴바 높이를 상수로 빼는 대신 여기서 읽으면 패딩·툴바가 바뀌어도 안 어긋난다.
 		const ImVec2 imageMin = ImGui::GetItemRectMin();
 		const ImVec2 imageMax = ImGui::GetItemRectMax();
 
-		// ImGuizmo
+		// 기즈모가 붙는 대상 = 마지막에 고른 것. 아래 ImGuizmo 블록과 같은 조건이라
+		// 여기서 한 번 구해 둘이 공유한다.
 		Entity* activeEntity = pm_sceneProperties_panel.get_activeEntity();
-		if (activeEntity && pm_manipulatorType != -1) {
+		const bool gizmoDrawn = (activeEntity && pm_manipulatorType != -1);
+
+		// ── P-b 피킹 요청 ────────────────────────────────────────────────────
+		// 화면 좌표 → 이미지 좌상단 기준 텍셀. 이미지를 1:1 크기로 그리므로
+		// (resize가 패널 크기를 그대로 따라간다) 배율 보정이 필요 없다.
+		//
+		// ⚠️ 기즈모 위에서는 안 잡는다. 축을 끌려고 누른 것을 선택으로 오해하면
+		//    조작 중에 대상이 바뀐다.
+		// ⚠️ 단, **기즈모가 실제로 그려질 때만** 물어본다. ImGuizmo::IsOver()는
+		//    지난 프레임 Manipulate()가 gContext에 남긴 행렬로 교차를 계산하는데,
+		//    선택이 없으면 Manipulate가 한 번도 안 불려 그 행렬이 0이다.
+		//    그대로 물어보면 엉뚱하게 참이 나와 **첫 클릭이 삼켜질 수 있다.**
+		// ⚠️ 카메라 조작 중에는 안 잡는다. camera.modifier(기본 LeftAlt) + 좌클릭은
+		//    이미 tumble이라, 궤도를 돌리려고 누른 것을 선택으로 받으면
+		//    마우스를 누르는 순간 선택이 통째로 날아간다.
+		//    키를 하드코딩하지 않는다 — keymap.yaml이 정한 그 키를 그대로 본다.
+		const bool cameraDragging = KeyMap::isHeld("camera.modifier");
+
+		if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+			&& !cameraDragging
+			&& !(gizmoDrawn && (ImGuizmo::IsOver() || ImGuizmo::IsUsing()))) {
+			const ImVec2 mouse = ImGui::GetMousePos();
+			const int px = (int)(mouse.x - imageMin.x);
+			const int py = (int)(mouse.y - imageMin.y);
+			if (px >= 0 && py >= 0) {
+				// 조합키는 **지금** 읽어둔다 — 결과는 몇 프레임 뒤에 온다.
+				pm_pendingPickMode = SceneProperties::selectModeFromMods();
+				// 어태치먼트 1번 = id 버퍼 (onAttach의 나열 순서)
+				pm_viewportTarget->requestPixelRead(1, (uint32_t)px, (uint32_t)py);
+			}
+		}
+
+		// ImGuizmo  (activeEntity / gizmoDrawn은 위 피킹 블록에서 이미 구했다)
+		if (gizmoDrawn) {
 			// primary cam_entity
 			auto* camEntity_primary = pm_scene->get_camera_primary();
 			auto& sceneCam = camEntity_primary->getComponent<CameraMatrixComponent>().sceneCam;
@@ -228,7 +266,11 @@ namespace AppWMs {
 		RenderTargetSpec targetSpec;
 		targetSpec.w = (uint32_t)pm_viewportSize.x;
 		targetSpec.h = (uint32_t)pm_viewportSize.y;
-		targetSpec.attachments = { AttachmentFormat::RGBA8, AttachmentFormat::Depth };
+		// 나열 순서 = 어태치먼트 슬롯 = cube.frag의 out location.
+		// 슬롯 1(R32SINT)이 피킹용 엔티티 id 버퍼다.
+		targetSpec.attachments = { AttachmentFormat::RGBA8,
+								   AttachmentFormat::R32SINT,
+								   AttachmentFormat::Depth };
 
 		pm_viewportTarget = RenderTarget::create(targetSpec);
 
@@ -240,7 +282,14 @@ namespace AppWMs {
 		pipeSpec.renderPass =
 			static_cast<VulkanRenderTarget*>(pm_viewportTarget.get())->getRenderPass();
 		pipeSpec.vertexLayout = Cube::layout();
-		pipeSpec.pushConstantSize = sizeof(glm::mat4) * 2;   // cube.vert의 u_MVP + u_Model
+		// cube.vert의 u_MVP + u_Model + u_EntityID
+		pipeSpec.pushConstantSize = sizeof(glm::mat4) * 2 + sizeof(int32_t);
+		// ⚠️ u_EntityID는 frag가 읽는다 — VERTEX만 켜두면 validation이 잡는다.
+		pipeSpec.pushConstantStages =
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+		// ⚠️ subpass의 colorAttachmentCount와 반드시 같아야 한다 (id 버퍼가 붙어 2개).
+		pipeSpec.colorAttachmentCount =
+			static_cast<VulkanRenderTarget*>(pm_viewportTarget.get())->getColorAttachmentCount();
 		// cullMode/frontFace는 PipelineSpec 기본값(BACK + CCW)을 쓴다. 근거는 그쪽 주석 참고.
 
 		pm_cubePipeline = std::make_unique<VulkanPipeline>(pipeSpec);
@@ -280,6 +329,18 @@ namespace AppWMs {
 			// 드로우는 Scene::onUpdate가 카메라 행렬과 함께 Renderer::submit으로 낸다.
 			pm_scene->onUpdate(time);
 			pm_viewportTarget->endPass();
+
+			// ── P-c — 익은 피킹 결과를 선택에 반영한다.
+			//    요청(onImGuiRender)과 몇 프레임 떨어져 나오는 게 정상이다.
+			//
+			// 🟢 -1은 그대로 entt::null이 된다 (id 버퍼의 clear 값이 전 비트 1이고
+			//    entt::null도 전 비트 1이라 변환이 공짜다) → 빈 곳 클릭이 그대로
+			//    "선택 없음"으로 흘러간다.
+			int32_t picked = -1;
+			if (pm_viewportTarget->pollPixelRead(picked)) {
+				pm_sceneProperties_panel.applyPickSelection(
+					(entt::entity)(uint32_t)picked, pm_pendingPickMode);
+			}
 		}
 	}
 

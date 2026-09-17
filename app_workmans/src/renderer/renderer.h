@@ -17,8 +17,11 @@ namespace AppWMs {
 		static void beginScene(const glm::mat4& viewProj);
 		// ④ C안 — 파이프라인은 호출자가 미리 바인딩해둔 것을 쓴다.
 		// 파이프라인별 정렬 루프가 생기면 그 루프가 바인딩을 관리하게 된다.
+		// entityID는 피킹 id 버퍼에 찍힐 값. 기본값 -1은 "없음"(= entt::null의 비트패턴)이라
+		// 이 값으로 그린 픽셀은 클릭해도 아무것도 안 잡힌다.
 		static void submit(const Ref<VertexArray>& vertexArray,
-			const glm::mat4& model = glm::mat4(1.0f));
+			const glm::mat4& model = glm::mat4(1.0f),
+			int32_t entityID = -1);
 		static void end();
 
 		inline static RendererAPI::SelectRenderer getRenderer() { return RendererAPI::getRenderer(); }

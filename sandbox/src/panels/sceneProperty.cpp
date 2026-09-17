@@ -147,25 +147,85 @@ namespace AppWMs {
 		return pm_selectedEntities.empty() ? nullptr : &pm_selectedEntities.back();
 	}
 
-	void SceneProperties::handleSelectionClick(const Entity& e, bool additive)
+	// 조합키 → 선택 방식. keymap.yaml의 select 그룹이 정한다.
+	//
+	// ⚠️ **정확히 일치**로 본다. 부분 일치면 Ctrl(빼기)이 Ctrl+Shift(추가)를
+	//    먼저 삼켜 추가가 영원히 안 걸린다 — isAction이 같은 이유로 정확히 일치다.
+	SelectMode SceneProperties::selectModeFromMods()
 	{
-		if (!additive) {
+		const uint8_t mods = KeyMap::currentMods();
+		if (mods == KeyMod::None)
+			return SelectMode::Replace;   // 조합키 없는 클릭은 바인딩이 필요 없다
+
+		// 순서는 상관없다 — 정확히 일치라 세 값이 서로 겹치지 않는다.
+		const KeyBinding& add = KeyMap::get("select.add");
+		if (add.valid && mods == add.mods)       return SelectMode::Add;
+		const KeyBinding& sub = KeyMap::get("select.subtract");
+		if (sub.valid && mods == sub.mods)       return SelectMode::Subtract;
+		const KeyBinding& tog = KeyMap::get("select.toggle");
+		if (tog.valid && mods == tog.mods)       return SelectMode::Toggle;
+
+		// 모르는 조합(예: Alt = 카메라 모디파이어)은 교체로 떨어뜨리지 않는다.
+		// 선택을 날려버리는 게 기본값이면 오조작 비용이 너무 크다.
+		return SelectMode::Toggle;
+	}
+
+	void SceneProperties::handleSelectionClick(const Entity& e, SelectMode mode)
+	{
+		auto it = std::find(pm_selectedEntities.begin(), pm_selectedEntities.end(), e);
+		const bool already = (it != pm_selectedEntities.end());
+
+		switch (mode) {
+		case SelectMode::Replace:
 			pm_selectedEntities.clear();
 			pm_selectedEntities.push_back(e);
 			return;
+
+		case SelectMode::Add:
+			// 이미 들어 있으면 그대로 둔다 — 뒤로 옮기면 활성 대상이 조용히 바뀌어
+			// parent의 "마지막에 고른 것이 부모" 규칙이 흔들린다.
+			if (!already) pm_selectedEntities.push_back(e);
+			return;
+
+		case SelectMode::Subtract:
+			if (already) pm_selectedEntities.erase(it);
+			return;
+
+		case SelectMode::Toggle:
+			break;   // 아래 공통 경로
 		}
 
-		auto it = std::find(pm_selectedEntities.begin(), pm_selectedEntities.end(), e);
-		if (it == pm_selectedEntities.end()) {
+		if (!already) {
 			// ⚠️ 항상 **뒤에** 붙인다. 이 위치가 곧 선택 순서고,
 			//    마지막 원소가 활성(= parent의 부모)이 된다.
 			pm_selectedEntities.push_back(e);
 		}
 		else {
-			// 이미 골라져 있던 걸 Ctrl+클릭 → 해제.
 			// erase로 앞당겨져도 나머지의 상대 순서는 유지된다.
 			pm_selectedEntities.erase(it);
 		}
+	}
+
+	// 뷰포트 피킹(P-b) 결과를 선택에 반영한다. 아웃라이너 클릭과 **같은 함수**를
+	// 통과시키는 게 핵심이다 — 두 경로가 각자 선택 로직을 가지면 규칙이 갈라진다.
+	void SceneProperties::applyPickSelection(entt::entity handle, SelectMode mode)
+	{
+		// ── 빈 곳 클릭
+		if (handle == entt::null) {
+			// 조합키를 쥐고 빈 곳을 눌렀으면 아무 일도 안 한다.
+			// 복수 선택 중 실수로 빗나갔을 때 선택이 통째로 날아가면 안 된다 (마야 동작).
+			if (mode == SelectMode::Replace)
+				pm_selectedEntities.clear();
+			return;
+		}
+
+		// ⚠️ 클릭과 리드백 사이에 몇 프레임이 흐른다. 그 사이 지워진 엔티티일 수 있으므로
+		//    죽은 핸들을 선택에 넣지 않는다 (넣으면 Property editor가 그대로 터진다).
+		Entity picked{ handle, pm_scene.get() };
+		if (!pm_scene->isValid(picked))
+			return;
+
+		handleSelectionClick(picked, mode);
 	}
 
 	void SceneProperties::pruneInvalidSelection()
@@ -445,7 +505,9 @@ namespace AppWMs {
 		//    ImGui의 "마지막 아이템"이 자식으로 바뀌어 엉뚱한 노드가 선택된다.
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
 			clickedOnEntity = true;
-			handleSelectionClick(entity, ImGui::GetIO().KeyCtrl);
+			// ⚠️ 예전엔 KeyCtrl 하나로 토글만 됐다. 이제 뷰포트와 같은 표를 쓴다 —
+			//    조합키가 뭔지는 여기 없고 keymap.yaml의 select 그룹이 정한다.
+			handleSelectionClick(entity, selectModeFromMods());
 		}
 		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
 			if (tagComp.nameEditable) {

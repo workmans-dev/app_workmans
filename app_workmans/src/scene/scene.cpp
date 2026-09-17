@@ -453,7 +453,10 @@ namespace AppWMs {
 				auto [worldComp, meshComp] =
 					meshes.get<WorldTransformComponent, MeshComponent>(entity);
 				if (!meshComp.mesh) continue;
-				Renderer::submit(meshComp.mesh, worldComp.matrix);
+				// 🟢 엔티티 핸들 원본(index+version)을 그대로 보낸다. 버전 비트까지
+				//    보존되므로 P-b에서 읽은 값을 entt::entity로 되돌리면 정확히 이 엔티티다.
+				Renderer::submit(meshComp.mesh, worldComp.matrix,
+					(int32_t)(uint32_t)entity);
 			}
 
 			Renderer::end();

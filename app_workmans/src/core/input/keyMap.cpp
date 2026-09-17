@@ -133,6 +133,10 @@ namespace AppWMs {
 			{ "file.openScene",    "Ctrl+O" },
 			{ "file.saveAsScene",  "Ctrl+Shift+S" },
 			{ "app.exit",          "Ctrl+Q" },
+			// 선택 — 마야 규약. 조합키 없는 클릭(=교체)은 바인딩이 필요 없다.
+			{ "select.toggle",     "Shift+MouseLeft" },
+			{ "select.subtract",   "Ctrl+MouseLeft" },
+			{ "select.add",        "Ctrl+Shift+MouseLeft" },
 			{ "hierarchy.parent",  "P" },
 			{ "hierarchy.unparent","Shift+P" },
 			{ "edit.delete",       "Delete" },
