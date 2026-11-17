@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>GLM_FORCE_DEPTH_ZERO_TO_ONE;APP_WMS_PLATFORM_WINDOWS;APP_WMS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\app_workmans\vendor\spdlog\include;..\app_workmans\src;..\app_workmans\vendor;..\app_workmans\vendor\glm;..\app_workmans\vendor\entt\include;C:\VulkanSDK\1.4.350.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\app_workmans\vendor\spdlog\include;..\app_workmans\src;..\app_workmans\vendor;..\app_workmans\vendor\glm;..\app_workmans\vendor\entt\include;..\app_workmans\vendor\VulkanMemoryAllocator;C:\VulkanSDK\1.4.350.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -102,7 +102,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>GLM_FORCE_DEPTH_ZERO_TO_ONE;APP_WMS_PLATFORM_WINDOWS;APP_WMS_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\app_workmans\vendor\spdlog\include;..\app_workmans\src;..\app_workmans\vendor;..\app_workmans\vendor\glm;..\app_workmans\vendor\entt\include;C:\VulkanSDK\1.4.350.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\app_workmans\vendor\spdlog\include;..\app_workmans\src;..\app_workmans\vendor;..\app_workmans\vendor\glm;..\app_workmans\vendor\entt\include;..\app_workmans\vendor\VulkanMemoryAllocator;C:\VulkanSDK\1.4.350.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -128,7 +128,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>GLM_FORCE_DEPTH_ZERO_TO_ONE;APP_WMS_PLATFORM_WINDOWS;APP_WMS_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\app_workmans\vendor\spdlog\include;..\app_workmans\src;..\app_workmans\vendor;..\app_workmans\vendor\glm;..\app_workmans\vendor\entt\include;C:\VulkanSDK\1.4.350.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\app_workmans\vendor\spdlog\include;..\app_workmans\src;..\app_workmans\vendor;..\app_workmans\vendor\glm;..\app_workmans\vendor\entt\include;..\app_workmans\vendor\VulkanMemoryAllocator;C:\VulkanSDK\1.4.350.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>

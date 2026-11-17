@@ -17,6 +17,7 @@ includeDir["stb_image"] = "app_workmans/vendor/stb_image"
 includeDir["entt"] = "app_workmans/vendor/entt/include"
 includeDir["yaml_cpp"] = "app_workmans/vendor/yaml-cpp/include"
 includeDir["ImGuizmo"] = "app_workmans/vendor/ImGuizmo"
+includeDir["VulkanMemoryAllocator"] = "app_workmans/vendor/VulkanMemoryAllocator"
 includeDir["Vulkan"] = vulkan_sdk .. "/Include" -- Vulkan header path (includes the shaderc/ headers)
 
 -- lib path / file names
@@ -94,6 +95,7 @@ project "app_workmans"
         "%{includeDir.entt}",
         "%{includeDir.yaml_cpp}",
         "%{includeDir.ImGuizmo}",
+        "%{includeDir.VulkanMemoryAllocator}",
         "%{includeDir.Vulkan}"
     }
 
@@ -170,6 +172,7 @@ project "sandbox"
         "app_workmans/vendor",
         "%{includeDir.glm}",
         "%{includeDir.entt}",
+        "%{includeDir.VulkanMemoryAllocator}",
         "%{includeDir.Vulkan}" -- added so sandbox knows the Vulkan headers too
     }
 

@@ -91,7 +91,8 @@ premake5 is included under `vendor/bin/premaker`.
    is no runtime shader compilation.
 
 Submodules: GLFW, imgui (docking), glm, spdlog, yaml-cpp, ImGuizmo.
-EnTT is vendored as a single header (3.14.0).
+Vendored as single headers under `app_workmans/vendor/`: EnTT 3.14.0,
+AMD Vulkan Memory Allocator 3.3.0, stb_image.
 
 ## Origin
 
