@@ -67,3 +67,7 @@ Release/
 
 # Build output -- compile_shaders.bat regenerates these from the GLSL sources on every build
 *.spv
+
+# Documents have no business in a source repository (a set of personal PDFs
+# once ended up in vendor/ and had to be purged from the whole history)
+*.pdf
