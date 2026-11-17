@@ -23,7 +23,7 @@ namespace AppWMs {
 		switch (Renderer::getRenderer()) {
 		case RendererAPI::SelectRenderer::None:
 			APP_WMS_CORE_ASSERTS(false, "Renderer is None");
-			return nullptr;   // ⚠️ ASSERTS는 Release에서 컴파일 아웃 → fall-through 방지
+			return nullptr;   // WARNING: ASSERTS compiles out in Release -> prevents fall-through
 		case RendererAPI::SelectRenderer::Vulkan:
 			return std::make_shared<VulkanVertexBuffer>(vertices, size);
 		}

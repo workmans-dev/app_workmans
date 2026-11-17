@@ -22,7 +22,7 @@ namespace AppWMs {
 			shaderc::Compiler compiler;
 			shaderc::CompileOptions options;
 
-			// 벌칸 1.3 타겟 (인스턴스 apiVersion과 일치)
+			// Target Vulkan 1.3 (matches the instance apiVersion)
 			options.SetTargetEnvironment(shaderc_target_env_vulkan,
 				shaderc_env_version_vulkan_1_3);
 
@@ -36,7 +36,7 @@ namespace AppWMs {
 				ToShadercKind(stage), debugName.c_str(), options);
 
 			if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-				APP_WMS_CORE_ERROR("셰이더 컴파일 실패 [{0}]: {1}",
+				APP_WMS_CORE_ERROR("Shader compilation failed [{0}]: {1}",
 					debugName, result.GetErrorMessage());
 				return {};
 			}
@@ -46,7 +46,7 @@ namespace AppWMs {
 		std::vector<uint32_t> CompileFromFile(const std::string& filepath, ShaderStage stage) {
 			std::ifstream in(filepath, std::ios::in | std::ios::binary);
 			if (!in) {
-				APP_WMS_CORE_ERROR("셰이더 파일 열기 실패: {0}", filepath);
+				APP_WMS_CORE_ERROR("Failed to open shader file: {0}", filepath);
 				return {};
 			}
 			std::string source;
@@ -59,7 +59,8 @@ namespace AppWMs {
 			return CompileGLSL(source, stage, filepath);
 		}
 
-		// ⚠️ CreateShaderModule은 vk_shaderModule.cpp로 이전했다.
-		//    shaderc에 의존하지 않아 이 파일이 빌드 제외여도 살아 있어야 하기 때문.
+		// NOTE: CreateShaderModule moved to vk_shaderModule.cpp.
+		//       It does not depend on shaderc, so it has to stay alive even while this
+		//       file is excluded from the build.
 	}
 }

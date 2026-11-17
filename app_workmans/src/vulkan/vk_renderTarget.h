@@ -5,13 +5,13 @@
 
 namespace AppWMs {
 
-    // 오프스크린 렌더타겟. 스왑체인이 아닌 자체 이미지에 그리고,
-    // 그 결과를 ImGui가 텍스처로 샘플링해 뷰포트 패널에 붙인다.
+    // Offscreen render target. It draws into its own images rather than the swapchain,
+    // and ImGui samples the result as a texture to put it in the viewport panel.
     //
-    // ② 결정 A안 — VkRenderPass를 이 클래스가 멤버로 소유한다 (타겟마다 1개).
-    //   근거: 렌더패스는 어태치먼트 구성을 박아넣은 객체라, 공유하면 구성이
-    //         강제로 같아진다. 피킹 도입 시 뷰포트 타겟(RGBA8+R32_SINT+Depth)과
-    //         프리뷰 타겟(RGBA8)으로 구성이 갈리므로 공유가 성립하지 않는다.
+    // Decision #2, option A -- this class owns the VkRenderPass as a member (one per target).
+    //   Why: a render pass bakes in the attachment layout, so sharing one would force
+    //        every target to the same layout. With picking, the viewport target
+    //        (RGBA8+R32_SINT+Depth) and the preview target (RGBA8) diverge, so sharing fails.
     class VulkanRenderTarget : public RenderTarget {
     public:
         VulkanRenderTarget(const RenderTargetSpec& spec);
@@ -23,88 +23,88 @@ namespace AppWMs {
 
         virtual const RenderTargetSpec& get_spec() const override { return m_Spec; }
 
-        // ImGui::Image()에 그대로 넘길 핸들. 벌칸에선 VkDescriptorSet.
-        // index는 색 어태치먼트 번호다(깊이는 안 센다). 샘플링 대상이 아닌
-        // 슬롯(R32_SINT)은 디스크립터셋이 없어 0을 돌려준다.
+        // The handle passed straight to ImGui::Image(). On Vulkan that is a VkDescriptorSet.
+        // index is the color attachment number (depth is not counted). A slot that is not
+        // a sampling target (R32_SINT) has no descriptor set, so it returns 0.
         virtual uint64_t getColorTextureID(int index = 0) const override {
             if (index < 0 || index >= (int)m_Colors.size()) return 0;
             return (uint64_t)m_Colors[index].descriptorSet;
         }
 
-        // 파이프라인(3단계)이 대상 렌더패스를 빌려가는 창구
+        // Where the pipeline (step 3) borrows the target render pass
         VkRenderPass getRenderPass() const { return m_RenderPass; }
 
-        // ⚠️ 파이프라인의 컬러블렌드 어태치먼트 개수는 subpass의
-        //    colorAttachmentCount와 반드시 같아야 한다. 다르면 파이프라인 생성 거부.
+        // WARNING: the pipeline's color blend attachment count must equal the subpass'
+        //    colorAttachmentCount. A mismatch makes pipeline creation fail.
         uint32_t getColorAttachmentCount() const { return (uint32_t)m_Colors.size(); }
 
         virtual void requestPixelRead(int attachmentIndex, uint32_t x, uint32_t y) override;
         virtual bool pollPixelRead(int32_t& outValue) override;
 
     private:
-        void createRenderPass();  // 생성자에서 1회. 크기와 무관하므로 resize에서 재생성 안 함
-        void invalidate();        // 이미지/뷰/프레임버퍼/샘플러/디스크립터셋 생성
-        void cleanup();           // 위 것들만 파괴 (렌더패스 제외)
+        void createRenderPass();  // once in the constructor. Size-independent, so not recreated on resize
+        void invalidate();        // creates images/views/framebuffer/sampler/descriptor sets
+        void cleanup();           // destroys only the above (render pass excluded)
 
-        // 픽셀 리드백 — 스테이징 버퍼는 4바이트짜리라 크기와 무관하다.
-        // 그래서 invalidate/cleanup이 아니라 생성자/소멸자가 잡는다.
+        // Pixel readback -- the staging buffer is 4 bytes, so it is size-independent.
+        // That is why the constructor/destructor own it, not invalidate/cleanup.
         void createReadbackBuffers();
         void destroyReadbackBuffers();
-        // endPass()가 매 프레임 부른다: 익은 것 수확 → 새 요청 기록
+        // endPass() calls this every frame: harvest what is ready -> record the new request
         void harvestAndRecordPixelRead(VkCommandBuffer cmd);
 
     private:
         RenderTargetSpec m_Spec;
 
-        // 색 어태치먼트 N개. 나열 순서가 곧 렌더패스 슬롯 번호이자
-        // 프래그먼트 셰이더의 out location이다.
-        //   슬롯 0: RGBA8    — 그리기 + ImGui 샘플링
-        //   슬롯 1: R32_SINT — 그리기 + CPU 리드백 (P-b). 샘플링 안 함
+        // N color attachments. The order listed is both the render pass slot number
+        // and the out location in the fragment shader.
+        //   slot 0: RGBA8    -- drawing + ImGui sampling
+        //   slot 1: R32_SINT -- drawing + CPU readback (P-b). Never sampled
         struct ColorAttachment {
             VkImage         image = VK_NULL_HANDLE;
             VmaAllocation   alloc = nullptr;
             VkImageView     view = VK_NULL_HANDLE;
             VkFormat        format = VK_FORMAT_UNDEFINED;
-            // sampled=false면 SAMPLED usage도, 디스크립터셋도, 최초 레이아웃
-            // 전환도 만들지 않는다. 정수 포맷은 선형 필터링 자체가 안 된다.
+            // With sampled=false we create no SAMPLED usage, no descriptor set and no initial
+            // layout transition. An integer format cannot be linearly filtered at all.
             bool            sampled = false;
             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
         };
         std::vector<ColorAttachment> m_Colors;
 
-        // 깊이 어태치먼트 — spec.attachments에 Depth가 있을 때만
+        // Depth attachment -- only when spec.attachments contains Depth
         VkImage       m_DepthImage = VK_NULL_HANDLE;
         VmaAllocation m_DepthAlloc = nullptr;
         VkImageView   m_DepthView = VK_NULL_HANDLE;
         VkFormat      m_DepthFormat = VK_FORMAT_UNDEFINED;
         bool          m_HasDepth = false;
 
-        // ② A안 — 타겟마다 1개씩 소유
+        // Decision #2, option A -- one owned per target
         VkRenderPass  m_RenderPass = VK_NULL_HANDLE;
-        // ⚠️ 이건 벌칸 API 핸들(슬롯 배선표)이지 이 클래스와 같은 개념이 아니다.
+        // WARNING: this is the Vulkan API handle (the slot wiring table), not the same concept as this class.
         VkFramebuffer m_Framebuffer = VK_NULL_HANDLE;
 
-        // ImGui 샘플링 경로. 샘플러는 sampled 슬롯들이 공유한다.
+        // The ImGui sampling path. The sampler is shared by the sampled slots.
         VkSampler       m_Sampler = VK_NULL_HANDLE;
 
-        // ── 픽셀 리드백 (P-b) ────────────────────────────────────────────────
-        // ⚠️ frame-in-flight 슬롯마다 하나씩 두는 게 핵심이다. 슬롯 S에 복사를
-        //    기록하면, 2프레임 뒤 그 슬롯으로 돌아왔을 때 beginFrame이 이미
-        //    fence[S]를 기다린 뒤라 **복사 완료가 공짜로 보장된다.**
-        //    버퍼 하나를 돌려쓰면 그 보장이 없어 vkDeviceWaitIdle이 필요해진다.
+        // -- Pixel readback (P-b) ---------------------------------------------
+        // WARNING: the key is having one per frame-in-flight slot. If the copy is recorded
+        //    into slot S, then two frames later, when we come back to that slot, beginFrame
+        //    has already waited on fence[S], so copy completion is guaranteed for free.
+        //    Recycling a single buffer loses that guarantee and forces a vkDeviceWaitIdle.
         struct Readback {
             VkBuffer      buffer = VK_NULL_HANDLE;
             VmaAllocation alloc = nullptr;
-            void* mapped = nullptr;   // 상주 매핑 (4B라 매번 map/unmap할 이유가 없다)
-            bool          pending = false;     // 이 슬롯에 수확 대기 중인 복사가 있나
+            void* mapped = nullptr;   // persistently mapped (at 4B there is no reason to map/unmap each time)
+            bool          pending = false;     // is there a copy in this slot waiting to be harvested
         };
-        std::vector<Readback> m_Readbacks;   // [frame-in-flight 슬롯]
+        std::vector<Readback> m_Readbacks;   // [frame-in-flight slot]
 
-        // 다음 endPass()에서 기록할 요청. -1이면 요청 없음.
+        // The request to record in the next endPass(). -1 means no request.
         int      m_PendingReadAttachment = -1;
         uint32_t m_PendingReadX = 0, m_PendingReadY = 0;
 
-        // 수확 결과. pollPixelRead가 꺼내가면 다시 false가 된다.
+        // The harvested result. Goes back to false once pollPixelRead takes it.
         bool     m_HasResult = false;
         int32_t  m_Result = -1;
     };

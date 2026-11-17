@@ -20,8 +20,9 @@ namespace AppWMs {
 		}
 
 		// =====================================================================
-		// 1. 셰이더 — 빌드 시 구워둔 .spv를 읽어 모듈 2개
-		//    모듈은 파이프라인 생성에만 쓰이므로 함수 끝에서 바로 파괴한다.
+		// 1. Shaders -- read the .spv baked at build time into two modules.
+		//    The modules are only needed to create the pipeline, so they are
+		//    destroyed right at the end of this function.
 		// =====================================================================
 		auto vertSpirv = VulkanShaderCompiler::LoadSpirvFile(spec.vertPath);
 		auto fragSpirv = VulkanShaderCompiler::LoadSpirvFile(spec.fragPath);
@@ -30,7 +31,7 @@ namespace AppWMs {
 		VkShaderModule fragModule = VulkanShaderCompiler::CreateShaderModule(device, fragSpirv);
 
 		if (vertModule == VK_NULL_HANDLE || fragModule == VK_NULL_HANDLE) {
-			APP_WMS_CORE_ERROR("Pipeline: shader module failed → stopped the pipeline");
+			APP_WMS_CORE_ERROR("Pipeline: shader module failed -> stopped the pipeline");
 			if (vertModule) vkDestroyShaderModule(device, vertModule, nullptr);
 			if (fragModule) vkDestroyShaderModule(device, fragModule, nullptr);
 			return;
@@ -48,8 +49,8 @@ namespace AppWMs {
 		stages[1].pName = "main";
 
 		// =====================================================================
-		// 2. 파이프라인 레이아웃 — 셰이더가 정점 외에 받는 데이터의 형태
-		//    첫 큐브는 push constant만 쓴다 (디스크립터셋 0개).
+		// 2. Pipeline layout -- the shape of the data the shader takes besides vertices.
+		//    The first cube uses push constants only (zero descriptor sets).
 		// =====================================================================
 		VkPushConstantRange pushRange{};
 		pushRange.stageFlags = m_PushConstantStages;
@@ -64,14 +65,14 @@ namespace AppWMs {
 		layoutInfo.pPushConstantRanges = (m_PushConstantSize > 0) ? &pushRange : nullptr;
 
 		if (vkCreatePipelineLayout(device, &layoutInfo, nullptr, &m_Layout) != VK_SUCCESS) {
-			APP_WMS_CORE_ERROR("PipelineLayout 생성 실패!");
+			APP_WMS_CORE_ERROR("Failed to create PipelineLayout!");
 			vkDestroyShaderModule(device, vertModule, nullptr);
 			vkDestroyShaderModule(device, fragModule, nullptr);
 			return;
 		}
 
 		// =====================================================================
-		// 3. 정점 입력 — 3-a의 변환기가 BufferLayout을 그대로 받아준다
+		// 3. Vertex input -- the converter from step 3-a takes the BufferLayout as it is
 		// =====================================================================
 		auto vertexInput = VulkanVertexInput::Build(spec.vertexLayout, 0);
 
@@ -83,15 +84,15 @@ namespace AppWMs {
 		viState.pVertexAttributeDescriptions = vertexInput.attributes.data();
 
 		// =====================================================================
-		// 4. 고정 상태
+		// 4. Fixed state
 		// =====================================================================
 		VkPipelineInputAssemblyStateCreateInfo ia{};
 		ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		ia.primitiveRestartEnable = VK_FALSE;
 
-		// 뷰포트/시저는 동적 — 패널 크기가 바뀔 때마다 파이프라인을 다시 만들지 않기 위해서.
-		// 실제 값은 VulkanRenderTarget::beginPass()가 vkCmdSetViewport/Scissor로 넣는다.
+		// Viewport/scissor are dynamic, so the pipeline is not rebuilt every time the panel resizes.
+		// The actual values are set by VulkanRenderTarget::beginPass() via vkCmdSetViewport/Scissor.
 		VkPipelineViewportStateCreateInfo vp{};
 		vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		vp.viewportCount = 1;
@@ -109,10 +110,10 @@ namespace AppWMs {
 
 		VkPipelineMultisampleStateCreateInfo ms{};
 		ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;   // RenderTargetSpec.samples=1과 일치해야 함
+		ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;   // must match RenderTargetSpec.samples=1
 		ms.sampleShadingEnable = VK_FALSE;
 
-		// 깊이 clear가 1.0이고 GLM_FORCE_DEPTH_ZERO_TO_ONE(0~1)이므로 LESS가 맞다
+		// The depth clear is 1.0 and GLM_FORCE_DEPTH_ZERO_TO_ONE gives 0..1, so LESS is correct
 		VkPipelineDepthStencilStateCreateInfo ds{};
 		ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		ds.depthTestEnable = spec.depthTest ? VK_TRUE : VK_FALSE;
@@ -121,9 +122,10 @@ namespace AppWMs {
 		ds.depthBoundsTestEnable = VK_FALSE;
 		ds.stencilTestEnable = VK_FALSE;
 
-		// 어태치먼트 개수는 렌더패스 subpass의 colorAttachmentCount와 반드시 같아야 한다.
-		// ⚠️ blendEnable은 전부 FALSE여야 한다 — id 버퍼(R32_SINT)처럼 정수 포맷은
-		//    블렌딩 자체가 금지다. 색 슬롯에 블렌딩을 켤 땐 슬롯별로 갈라야 한다.
+		// The attachment count must equal the colorAttachmentCount of the render pass subpass.
+		// WARNING: blendEnable has to be FALSE for all of them -- an integer format such as
+		//          the id buffer (R32_SINT) forbids blending outright. To enable blending on
+		//          a color slot, the slots have to be split out individually.
 		VkPipelineColorBlendAttachmentState blendAttach{};
 		blendAttach.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
 			| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -144,7 +146,7 @@ namespace AppWMs {
 		dyn.pDynamicStates = dynStates;
 
 		// =====================================================================
-		// 5. 파이프라인 생성
+		// 5. Create the pipeline
 		// =====================================================================
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -165,7 +167,7 @@ namespace AppWMs {
 		VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
 			&pipelineInfo, nullptr, &m_Pipeline);
 
-		// 모듈은 여기까지만 필요하다 — 파이프라인이 코드를 이미 흡수했다
+		// The modules are needed only up to here -- the pipeline has already absorbed the code
 		vkDestroyShaderModule(device, vertModule, nullptr);
 		vkDestroyShaderModule(device, fragModule, nullptr);
 
@@ -174,7 +176,7 @@ namespace AppWMs {
 			return;
 		}
 
-		APP_WMS_CORE_INFO("Pipeline build finished — attr {0}, stride {1}, push {2}B",
+		APP_WMS_CORE_INFO("Pipeline build finished - attr {0}, stride {1}, push {2}B",
 			vertexInput.attributes.size(), spec.vertexLayout.getStride(), m_PushConstantSize);
 	}
 
@@ -191,15 +193,15 @@ namespace AppWMs {
 	void VulkanPipeline::bind(VkCommandBuffer cmd) const {
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
-		// 이후 pushObjectMatrices가 이 파이프라인의 레이아웃을 찾아 쓸 수 있게 등록.
-		// 추상 API로 VkPipelineLayout을 넘길 수 없어서 생긴 우회로다.
+		// Register ourselves so that pushObjectMatrices can find and use this pipeline's layout.
+		// This detour exists because VkPipelineLayout cannot be passed through the abstract API.
 		static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI())->setCurrentPipeline(this);
 	}
 
 	void VulkanPipeline::pushConstants(VkCommandBuffer cmd, const void* data, uint32_t size) const {
 		if (m_PushConstantSize == 0) return;
-		// 레이아웃에 선언한 범위를 넘기면 validation 에러 → 선언 크기로 자른다.
-		// stageFlags도 선언과 정확히 같아야 하므로 스펙에서 받은 값을 그대로 쓴다.
+		// Exceeding the range declared in the layout is a validation error -> clamp to the declared size.
+		// stageFlags must also match the declaration exactly, so the value from the spec is used as is.
 		vkCmdPushConstants(cmd, m_Layout, m_PushConstantStages, 0,
 			(size < m_PushConstantSize) ? size : m_PushConstantSize, data);
 	}

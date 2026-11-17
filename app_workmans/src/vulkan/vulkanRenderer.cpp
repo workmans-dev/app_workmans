@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 #include "vulkanRenderer.h"
-#include "vulkan/vulkanContext.h" // 장치 정보 접근용
+#include "vulkan/vulkanContext.h" // for access to device info
 #include "vulkan/vk_vertexArray.h" // bindToCommandBuffer
 #include "vulkan/vk_pipeline.h"    // pushConstants
 
@@ -13,24 +13,24 @@ namespace AppWMs {
         VkFormat swapChainImageFormat = VulkanContext::Get()->getSwapChainImageFormat();
 
         // =========================================================================
-        // 🎨 1. RenderPass (도화지 세팅) 조립
+        // 1. Assemble the RenderPass (the canvas setup)
         // =========================================================================
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = swapChainImageFormat;
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;   // 그리기 전에 화면 지움
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // 그린 후 화면 보존
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;   // clear the screen before drawing
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // keep what was drawn
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // 최종 화면 송출용 레이아웃
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // layout for final presentation
 
         VkAttachmentReference colorAttachmentRef{};
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        // ⚠️ 스왑체인 패스는 ImGui 전용 → 깊이 어태치먼트 없음.
-        //    3D 깊이 테스트는 오프스크린 RenderPass가 담당한다.
+        // WARNING: the swapchain pass is ImGui only -> no depth attachment.
+        //    The offscreen RenderPass is what handles 3D depth testing.
 
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -57,13 +57,13 @@ namespace AppWMs {
         renderPassInfo.pDependencies = &dependency;
 
         if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
-            APP_WMS_CORE_ERROR("RenderPass 생성 실패!");
+            APP_WMS_CORE_ERROR("Failed to create RenderPass!");
         }
 
         // =========================================================================
-        // 🧺 2. DescriptorPool (물감 바구니) 조립
+        // 2. Assemble the DescriptorPool
         // =========================================================================
-        // ImGui 및 엔진 텍스처들이 넉넉하게 쓸 수 있도록 크기를 크게 잡아줍니다.
+        // Sized generously so ImGui and the engine textures have plenty of room.
         VkDescriptorPoolSize pool_sizes[] = {
             { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -81,21 +81,21 @@ namespace AppWMs {
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000 * 11; // 넉넉한 최대 세트 수
+        pool_info.maxSets = 1000 * 11; // generous maximum set count
         pool_info.poolSizeCount = (uint32_t)(sizeof(pool_sizes) / sizeof(pool_sizes[0]));
         pool_info.pPoolSizes = pool_sizes;
 
         if (vkCreateDescriptorPool(device, &pool_info, nullptr, &m_DescriptorPool) != VK_SUCCESS) {
-            APP_WMS_CORE_ERROR("DescriptorPool 생성 실패!");
+            APP_WMS_CORE_ERROR("Failed to create DescriptorPool!");
         }
         recreateFramebuffers();
-        APP_WMS_CORE_INFO("VulkanRendererAPI: RenderPass & DescriptorPool 생성 완료!");
+        APP_WMS_CORE_INFO("VulkanRendererAPI: RenderPass & DescriptorPool created!");
     }
     void VulkanRendererAPI::recreateFramebuffers() {
         auto ctx = VulkanContext::Get();
         VkDevice device = ctx->getDevice();
 
-        // 기존 것 파괴 (리사이즈 재호출 대비 — 최초 호출 시엔 비어 있어 no-op)
+        // Destroy the existing ones (for the resize re-entry -- empty on the first call, so a no-op)
         for (auto fb : m_vkFramebuffers) {
             if (fb != VK_NULL_HANDLE) vkDestroyFramebuffer(device, fb, nullptr);
         }
@@ -107,7 +107,7 @@ namespace AppWMs {
         m_vkFramebuffers.resize(colorViews.size());
 
         for (size_t i = 0; i < colorViews.size(); i++) {
-            // ⭐️ 배열 순서 = RenderPass의 attachment 인덱스 (0=color)
+            // Array order = attachment index in the RenderPass (0=color)
             VkImageView attachments[] = { colorViews[i] };
 
             VkFramebufferCreateInfo fbInfo{};
@@ -120,46 +120,46 @@ namespace AppWMs {
             fbInfo.layers = 1;
 
             if (vkCreateFramebuffer(device, &fbInfo, nullptr, &m_vkFramebuffers[i]) != VK_SUCCESS) {
-                APP_WMS_CORE_ERROR("Framebuffer 생성 실패! (index {0})", i);
+                APP_WMS_CORE_ERROR("Failed to create Framebuffer! (index {0})", i);
             }
         }
 
-        APP_WMS_CORE_INFO("Framebuffer {0}개 생성 ({1}x{2})",
+        APP_WMS_CORE_INFO("Created {0} framebuffers ({1}x{2})",
             m_vkFramebuffers.size(), extent.width, extent.height);
     }
 
     bool VulkanRendererAPI::beginFrame() {
         auto ctx = VulkanContext::Get();
 
-        // 🟢 스왑체인 재생성은 여기서만 한다. 커맨드버퍼가 아직 열리기 전이라 안전하다.
-        //    Context가 스스로 하지 않는 이유: 프레임버퍼는 상위(이 클래스)가 소유하므로
-        //    재생성 순서를 아는 쪽이 여기다. 하위가 상위를 역참조하지 않는 원칙도 유지된다.
+        // Swapchain recreation happens only here. It is safe because the command buffer is not open yet.
+        //    Why Context does not do it itself: the framebuffers are owned by the layer above (this class),
+        //    so this is the side that knows the recreation order, and the rule that a lower layer never back-references a higher one still holds.
         if (ctx->isSwapChainDirty()) {
             if (!ctx->recreateSwapChain()) {
-                // 최소화 등으로 아직 못 만든다 → 낡음 표시를 유지한 채 이번 프레임 스킵
+                // Cannot build it yet (minimized, etc.) -> keep the stale mark and skip this frame
                 return false;
             }
-            // 스왑체인 이미지뷰가 통째로 바뀌었으니 그걸 붙들고 있던 FB도 다시 만든다
+            // The swapchain image views changed wholesale, so the FBs holding them are rebuilt too
             recreateFramebuffers();
         }
 
-        // Context가 acquire + 커맨드버퍼 개시. out-of-date면 false → 프레임 스킵
+        // Context does the acquire + begins the command buffer. Out-of-date gives false -> skip the frame
         return ctx->beginFrame();
     }
 
     void VulkanRendererAPI::endFrame() {
-        // Context가 커맨드버퍼 종료 + submit + present + 슬롯 회전
+        // Context ends the command buffer + submit + present + rotates the slot
         VulkanContext::Get()->swapBuffers();
     }
 
 
     // ─────────────────────────────────────────────────────────────
-    // 🚧 스텁 — vtable 구성용. 해당 단계에서 채운다.
+    // Stubs -- present to fill out the vtable. Filled in at the relevant step.
     // ─────────────────────────────────────────────────────────────
     void VulkanRendererAPI::set_viewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
-        // 창 크기가 바뀌면 스왑체인이 낡는다. 여기선 표시만 남기고
-        // 실제 재생성은 다음 beginFrame(프레임 경계)이 처리한다.
-        // ⚠️ 이 이벤트는 프레임 한복판(커맨드버퍼 기록 중)에도 들어올 수 있다.
+        // A window resize makes the swapchain stale. We only mark it here;
+        // the actual recreation is handled by the next beginFrame (a frame boundary).
+        // WARNING: this event can arrive mid-frame, while the command buffer is being recorded.
         VulkanContext::Get()->requestSwapChainRecreate();
     }
 
@@ -168,55 +168,55 @@ namespace AppWMs {
     }
 
     void VulkanRendererAPI::clear() {
-        // 벌칸은 RenderPass loadOp=CLEAR가 담당 → no-op
+        // On Vulkan the RenderPass loadOp=CLEAR handles this -> no-op
     }
 
     void VulkanRendererAPI::drawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount) {
         if (!vertexArray) return;
 
-        // ⚠️ 전제: 호출자가 렌더패스를 열고(FrameBuffer::bind) 파이프라인을 바인딩한 상태여야 한다.
-        //    벌칸은 전역 상태가 없어서 이 함수가 스스로 확인할 방법이 없다.
+        // WARNING: precondition -- the caller must have opened the render pass (RenderTarget::beginPass)
+        //    and bound a pipeline. Vulkan has no global state, so this function cannot check that itself.
         auto vkVA = std::static_pointer_cast<VulkanVertexArray>(vertexArray);
 
         const Ref<IndexBuffer>& ib = vertexArray->getIndexBuffer();
         if (!ib) {
-            APP_WMS_CORE_ERROR("drawIndexed: IndexBuffer가 없다");
+            APP_WMS_CORE_ERROR("drawIndexed: no IndexBuffer");
             return;
         }
 
         VkCommandBuffer cmd = VulkanContext::Get()->getCurrentCommandBuffer();
 
-        // 정점/인덱스 버퍼를 커맨드버퍼에 바인딩 (핸들은 addVertexBuffer 때 캐시해둔 것)
+        // Bind the vertex/index buffers into the command buffer (handles were cached in addVertexBuffer)
         vkVA->bindToCommandBuffer(cmd);
 
-        // indexCount 0 = "전부 그린다" (기존 추상 시그니처의 기본값 규약)
+        // indexCount 0 = "draw everything" (the default convention of the existing abstract signature)
         const uint32_t count = indexCount ? indexCount : ib->getCount();
 
         vkCmdDrawIndexed(cmd, count, 1, 0, 0, 0);
     }
 
     void VulkanRendererAPI::drawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) {
-        // 추후
+        // later
     }
 
     void VulkanRendererAPI::setLineWidth(float width) {
-        // 추후 (VK_DYNAMIC_STATE_LINE_WIDTH)
+        // later (VK_DYNAMIC_STATE_LINE_WIDTH)
     }
 
     void VulkanRendererAPI::pushObjectMatrices(const glm::mat4& mvp, const glm::mat4& model,
         int32_t entityID) {
         if (!m_CurrentPipeline) {
-            APP_WMS_CORE_ERROR("pushObjectMatrices: 바인딩된 파이프라인이 없다");
+            APP_WMS_CORE_ERROR("pushObjectMatrices: no pipeline is bound");
             return;
         }
-        // ⚠️ cube.vert/frag의 Push 블록과 바이트 단위로 같아야 한다.
-        //    어긋나면 컴파일도 validation도 통과하는데 화면만 조용히 깨진다.
+        // WARNING: must match the Push block in cube.vert/frag byte for byte.
+        //    A mismatch compiles and passes validation, and only the image breaks, silently.
         struct Push {
             glm::mat4 mvp;        //   0..63
             glm::mat4 model;      //  64..127
             int32_t   entityID;   // 128..131
         } data{ mvp, model, entityID };
-        static_assert(sizeof(Push) == 132, "cube.vert/frag의 Push 블록과 크기가 어긋났다");
+        static_assert(sizeof(Push) == 132, "size diverged from the Push block in cube.vert/frag");
 
         m_CurrentPipeline->pushConstants(
             VulkanContext::Get()->getCurrentCommandBuffer(), &data, sizeof(data));
@@ -227,8 +227,8 @@ namespace AppWMs {
     }
 
     void VulkanRendererAPI::shutdown() {
-        // 전제: App이 waitIdle → 레이어 파괴 → ImGui 백엔드 종료까지 마친 뒤에 부른다.
-        //       디스크립터풀은 ImGui가 쓰던 것이라 그보다 먼저 파괴하면 안 된다.
+        // Precondition: App calls this only after waitIdle -> layer destruction -> ImGui backend shutdown.
+        //       The descriptor pool was the one ImGui used, so it must not be destroyed before that.
         VkDevice device = VulkanContext::Get()->getDevice();
         if (device == VK_NULL_HANDLE) return;
 

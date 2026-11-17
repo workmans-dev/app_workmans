@@ -75,7 +75,7 @@ namespace AppWMs {
 
 	void ImGuiLayer::onAttach()
 	{
-		// 1. 순수 ImGui 컨텍스트 생성 및 기본 세팅만 수행 (독립성 보장)
+		// 1. Only creates a pure ImGui context and does the basic setup (keeps it independent)
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
@@ -88,28 +88,28 @@ namespace AppWMs {
 
 		setDark();
 
-		// 🔴 과거의 지저분했던 App 캐스팅 및 윈도우 강제 스캔 로직(App::getApp()...)은 
-		// 형님의 설계 원칙에 따라 완전히 삭제되어 쓰레기통으로 들어갔습니다.
+		// The old messy App casting and forced window scan (App::getApp()...) was removed
+		// entirely, in line with the design principle.
 	}
 
 	void ImGuiLayer::InitVulkanBackend(GLFWwindow* window)
 	{
-		// 1. 윈도우 연동
+		// 1. Window hookup
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 
-		// 2. 하드웨어 인프라(Context) 빼오기
+		// 2. Pull out the hardware infrastructure (Context)
 		auto context = VulkanContext::Get();
 
-		// 3. pm_rendererAPI_ptr를 활용한 완벽한 다운캐스팅 연동!
+		// 3. Clean downcast hookup through pm_rendererAPI_ptr
 		auto renderer = static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI());
 
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.ApiVersion = VK_API_VERSION_1_3;  // 🟢 신버전 필수 필드
+		init_info.ApiVersion = VK_API_VERSION_1_3;  // required field in the new version
 		init_info.Instance = context->getInstance();
 		init_info.PhysicalDevice = context->getPhysicalDevice();
 		init_info.Device = context->getDevice();
 
-		// 🟢 Context가 init에서 한 번 찾아둔 인덱스 재사용 (0번 하드코딩 제거)
+		// Reuses the index Context found once during init (removes the hardcoded 0)
 		uint32_t graphicsFamily = context->getQueueIndices().graphicsFamily.value();
 		init_info.QueueFamily = graphicsFamily;
 		vkGetDeviceQueue(context->getDevice(), graphicsFamily, 0, &init_info.Queue);
@@ -141,14 +141,14 @@ namespace AppWMs {
 
 	void ImGuiLayer::onDetach()
 	{
-		// 🟢 종료 처리 코드도 벌칸 백엔드 전용으로 깔끔하게 정리
+		// Shutdown handling, cleaned up to be Vulkan-backend only
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 	}
 
 	void ImGuiLayer::begin() {
-		// 🟢 매 프레임 시작 시 벌칸 백엔드 프레임 선언
+		// Declares the Vulkan backend frame at the start of every frame
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -162,15 +162,15 @@ namespace AppWMs {
 
 		ImGui::Render();
 
-		// 🟢 메인 창 스왑체인 렌더패스에 ImGui 드로우 기록
-		//    커맨드버퍼는 Context가 beginFrame에서 이미 열어둔 것을 빌려 씀
+		// Records the ImGui draws into the main window swapchain render pass
+		//    The command buffer is borrowed from the one Context already opened in beginFrame
 		auto ctx = VulkanContext::Get();
 		auto renderer = static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI());
 		VkCommandBuffer cmd = ctx->getCurrentCommandBuffer();
 
 		const glm::vec4& cc = renderer->getClearColor();
 		VkClearValue clearValue{};
-		clearValue.color = { { cc.r, cc.g, cc.b, cc.a } };  // attachment 0 = color (깊이 없음)
+		clearValue.color = { { cc.r, cc.g, cc.b, cc.a } };  // attachment 0 = color (no depth)
 
 		VkRenderPassBeginInfo rpBegin{};
 		rpBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -185,9 +185,9 @@ namespace AppWMs {
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 		vkCmdEndRenderPass(cmd);
 
-		// 멀티 뷰포트 창 처리
-		// ⚠️ 세컨더리 뷰포트는 ImGui가 자체 스왑체인/커맨드버퍼/submit/present를 처리.
-		//    메인 커맨드버퍼는 아직 기록 중(미제출)이라 큐 충돌 없음.
+		// Multi-viewport window handling
+		// WARNING: for secondary viewports ImGui handles its own swapchain/command buffer/submit/present.
+		//    The main command buffer is still being recorded (unsubmitted), so there is no queue conflict.
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();

@@ -2,12 +2,12 @@
 namespace AppWMs {
 	class GraphicContext {
 	public:
-		// ⚠️ 필수 — Win_Window가 GraphicContext* 로 들고 있다가 delete한다.
-		//    가상이 아니면 파생 소멸자(~VulkanContext)가 호출되지 않아 device/instance가 샌다.
+		// WARNING: required -- Win_Window holds this as a GraphicContext* and deletes it.
+		//    Without virtual, the derived destructor (~VulkanContext) never runs and device/instance leak.
 		virtual ~GraphicContext() = default;
 
 		virtual void init() = 0;
-		virtual bool beginFrame() = 0;   // 🟢 acquire + 커맨드버퍼 개시 (실패 시 false → 프레임 스킵)
+		virtual bool beginFrame() = 0;   // acquire + begin the command buffer (false on failure -> skip the frame)
 		virtual void swapBuffers() = 0;  // 🟢 end + submit + present
 	};
 }

@@ -51,8 +51,8 @@ namespace AppWMs {
 
 		}
 
-		// ⚠️ m_proj_mat은 glm 원본(OpenGL NDC, Y 위) 그대로 둔다. 여기서 뒤집지 말 것.
-		//    벌칸 보정은 get_projection_vk()가 사본에 적용한다 — 이유는 그쪽 주석 참고.
+		// WARNING: m_proj_mat stays as the glm original (OpenGL NDC, Y up). Do not flip it here.
+		//    The Vulkan correction is applied to a copy by get_projection_vk() -- see the comment there.
 		//APP_WMS_CORE_INFO("reized:{0}, {1}, {2}", m_proj_mat[3].x, m_proj_mat[3].y, m_proj_mat[3].z);
 	}
 

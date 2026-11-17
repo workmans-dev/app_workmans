@@ -14,7 +14,7 @@ namespace AppWMs {
 
 	Ref<VertexArray> Cube::create() {
 
-		// pos(3) / normal(3) / color(3) — 면당 4정점, 바깥에서 볼 때 CCW 감기
+		// pos(3) / normal(3) / color(3) -- 4 vertices per face, CCW winding seen from outside
 		static float s_Vertices[] = {
 			// +Z (front) — red
 			-0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,   0.9f, 0.2f, 0.2f,
@@ -53,7 +53,7 @@ namespace AppWMs {
 			  -0.5f,-0.5f, 0.5f,   0.0f,-1.0f, 0.0f,   0.85f,0.3f, 0.8f,
 		};
 
-		// 면당 0,1,2 / 2,3,0 — 4씩 오프셋
+		// 0,1,2 / 2,3,0 per face -- offset by 4 each time
 		static uint32_t s_Indices[] = {
 			 0, 1, 2,   2, 3, 0,
 			 4, 5, 6,   6, 7, 4,

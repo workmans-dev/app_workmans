@@ -14,8 +14,8 @@ namespace AppWMs {
 	class VulkanContext : public GraphicContext {
 	public:
 		VulkanContext(GLFWwindow* windowHandle);
-		// ⚠️ 생성의 정확한 역순으로 파괴한다. 상위 리소스(FrameBuffer/파이프라인/
-		//    ImGui 백엔드/RendererAPI)가 모두 반납된 뒤에 불려야 한다 — App::~App 참고.
+		// WARNING: destroys in the exact reverse order of creation. It must be called only after
+		//    the higher-level resources (RenderTarget/pipeline/ImGui backend/RendererAPI) are all released -- see App::~App.
 		virtual ~VulkanContext();
 
 		virtual void init() override;
@@ -24,22 +24,22 @@ namespace AppWMs {
 		// end
 		virtual void swapBuffers() override;
 
-		// 🟢 리사이즈 경로.
-		//   창 크기 변경이나 acquire/present의 OUT_OF_DATE는 "낡음" 표시만 남기고,
-		//   실제 재생성은 상위(VulkanRendererAPI::beginFrame)가 프레임 경계에서 구동한다.
-		//   프레임 한복판에서 갈아끼우면 기록 중인 커맨드버퍼가 깨지기 때문.
+		// The resize path.
+		//   A window resize, or OUT_OF_DATE from acquire/present, only leaves a "stale" mark;
+		//   the actual recreation is driven by VulkanRendererAPI::beginFrame at the frame boundary,
+		//   because swapping it mid-frame corrupts the command buffer being recorded.
 		void requestSwapChainRecreate() { m_SwapChainDirty = true; }
 		bool isSwapChainDirty() const { return m_SwapChainDirty; }
-		// 최소화(extent 0)면 아무것도 안 하고 false를 반환한다. 복원될 때까지 미룬다.
+		// When minimized (extent 0) it does nothing and returns false, deferring until restored.
 		bool recreateSwapChain();
 
 		static VulkanContext* Get();
-		// 🟢 frame-in-flight 슬롯 수 (CPU가 다음 프레임 준비하는 동안 GPU가 현재 프레임 처리)
+		// Number of frame-in-flight slots (the GPU works on the current frame while the CPU prepares the next)
 		static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 
-		// 🟢 하위 렌더러 구현체(VulkanRendererAPI)가 상위 레이어를 역참조하지 않고
-		// 이 컨텍스트에서 하드웨어 정보를 깨끗하게 바인딩해 갈 수 있도록 게터 제공
+		// Getters so the backend renderer (VulkanRendererAPI) can bind hardware info cleanly
+		// from this context without back-referencing the layers above it
 		VkInstance getInstance() const { return m_Instance; }
 		VkSurfaceKHR getSurface() const { return m_Surface; }
 		VkPhysicalDevice getPhysicalDevice() const { return m_PhysicalDevice; }
@@ -56,17 +56,17 @@ namespace AppWMs {
 
 		const VulkanInit::QueueFamilyIndices& getQueueIndices() const { return m_QueueIndices; }
 
-		// ⚠️ 번들이 유일한 원본이다. 예전엔 별도 m_SwapChain 멤버를 반환했는데
-		//    한 번도 대입되지 않아 항상 VK_NULL_HANDLE이었다 (미사용이라 안 드러났음).
+		// WARNING: the bundle is the single source of truth. This used to return a separate
+		//    m_SwapChain member that was never assigned, so it was always VK_NULL_HANDLE (unnoticed because unused).
 		VkSwapchainKHR getSwapChain() const { return m_SwapChainBundle.handle; }
 
-		// 🟢 vk_swapChain 개별 게터 추가
+		// Individual vk_swapChain getters
 		VkFormat getSwapChainImageFormat() const { return m_SwapChainBundle.format; }
 		VkExtent2D getSwapChainExtent()      const { return m_SwapChainBundle.extent; }
 		const std::vector<VkImage>& getSwapChainImages() const { return m_SwapChainBundle.images; }
 		const std::vector<VkImageView>& getSwapChainImageViews() const { return m_SwapChainBundle.imageViews; }
 
-		// 🟢 레이어들이 이번 프레임 커맨드버퍼를 빌려가는 창구 (벌칸이 레이어로 안 샘)
+		// Where layers borrow this frame's command buffer (keeps Vulkan from leaking into the layers)
 		VkCommandBuffer getCurrentCommandBuffer() const { return m_CommandBuffers[m_CurrentFrame]; }
 		uint32_t        getCurrentImageIndex()   const { return m_CurrentImageIndex; }
 		uint32_t        getCurrentFrameIndex()   const { return m_CurrentFrame; }
@@ -76,7 +76,7 @@ namespace AppWMs {
 
 		// context pointer 
 		static VulkanContext* s_VulkanContext;
-		// vulkan 코어 객체들
+		// vulkan core objects
 		VkInstance m_Instance = VK_NULL_HANDLE;
 		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
@@ -87,30 +87,30 @@ namespace AppWMs {
 
 		// from vk_init
 		VulkanInit::QueueFamilyIndices m_QueueIndices;
-		// 🟢 큐 핸들 3종
+		// the three queue handles
 		VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
 		VkQueue m_PresentQueue = VK_NULL_HANDLE;
 		VkQueue m_TransferQueue = VK_NULL_HANDLE;
-		// 🟢 커맨드풀 2종
+		// the two command pools
 		VkCommandPool m_GraphicsCommandPool = VK_NULL_HANDLE;
 		VkCommandPool m_TransferCommandPool = VK_NULL_HANDLE;
 
-		// 🟢 프레임 리소스
-		std::vector<VkCommandBuffer> m_CommandBuffers;              // [frame] 그래픽스 기록용
-		std::vector<VkSemaphore>     m_ImageAvailableSemaphores;    // [frame] acquire 완료 신호
-		std::vector<VkSemaphore>     m_RenderFinishedSemaphores;    // [image] 렌더 완료 신호 (present 대기)
-		std::vector<VkFence>         m_InFlightFences;              // [frame] CPU가 슬롯 재사용 전 대기
-		std::vector<VkFence>         m_ImagesInFlight;              // [image] 이미지별 사용중 펜스 추적
+		// frame resources
+		std::vector<VkCommandBuffer> m_CommandBuffers;              // [frame] for recording graphics
+		std::vector<VkSemaphore>     m_ImageAvailableSemaphores;    // [frame] acquire-complete signal
+		std::vector<VkSemaphore>     m_RenderFinishedSemaphores;    // [image] render-complete signal (present waits on it)
+		std::vector<VkFence>         m_InFlightFences;              // [frame] CPU waits here before reusing the slot
+		std::vector<VkFence>         m_ImagesInFlight;              // [image] tracks the in-use fence per image
 		uint32_t m_CurrentFrame = 0;
 		uint32_t m_CurrentImageIndex = 0;
 
 		// from vk_swapChain
 		VulkanSwapChain::SwapChainBundle m_SwapChainBundle;
-		bool m_SwapChainDirty = false;   // 창 리사이즈 / OUT_OF_DATE 감지 표시
+		bool m_SwapChainDirty = false;   // marks a window resize / OUT_OF_DATE detection
 
-		// 🟢 커맨드버퍼 + 동기화 객체 일괄 생성 (init 마지막 단계)
+		// Creates the command buffers and sync objects in one go (last step of init)
 		void createFrameResources();
-		// 🟢 이미지 개수에 묶인 동기화 객체만 다시 만든다 (재생성 시 개수가 바뀔 수 있음)
+		// Recreates only the sync objects tied to the image count (which can change on recreate)
 		void recreateImageSyncObjects();
 
 	};

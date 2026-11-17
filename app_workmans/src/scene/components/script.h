@@ -7,10 +7,10 @@
 
 namespace AppWMs {
 
-    // "어떻게 움직이나" — C++ 스크립트를 엔티티에 붙인다.
+    // "How does it move" -- attaches a C++ script to an entity.
     //
-    // ⚠️ 현재 미연결 상태다. Scene::onUpdate의 순회가 주석 처리돼 있어서
-    //    bind()를 해도 실행되지 않는다. 카메라 조작을 붙일 때 되살릴 자리.
+    // WARNING: currently not wired up. The traversal in Scene::onUpdate is commented out,
+    //    so bind() has no effect. This is the spot to revive when camera control gets attached.
     struct NativeScriptComponent {
         static constexpr const char* TypeName() { return "NativeScriptComponent"; }
 

@@ -19,8 +19,8 @@ namespace AppWMs {
 
 	void CameraController::onUpdate(Timer ts, glm::vec3& trans, glm::vec3& rot)
 	{
-		// 마야 규약 — modifier를 누른 채로 마우스 버튼을 끈다.
-		// 어떤 키/버튼인지는 assets/config/keymap.yaml의 camera 그룹이 정한다.
+		// Maya convention -- drag a mouse button while holding a modifier.
+		// Which key/button that is comes from the camera group in assets/config/keymap.yaml.
 		if (KeyMap::isHeld("camera.modifier"))
 		{
 
@@ -74,18 +74,18 @@ namespace AppWMs {
 		m_Yaw += yawSign * delta.x * RotationSpeed();
 		m_Pitch += delta.y * RotationSpeed();
 
-		// ⚠️ 클램프 없음 — 상하 무한 회전(마야 tumble 방식).
+		// WARNING: no clamp -- unlimited vertical rotation (the Maya tumble style).
 		//
-		//    m_Pitch는 라디안이다(GetOrientation()이 glm::quat(vec3(...))에 그대로 넣고
-		//    그 생성자가 라디안을 받는다). 예전 코드는 ±89로 클램프했는데 그건 도 단위라
-		//    ±5100°에 해당해 아무것도 막지 못했다 — 즉 원래도 무한 회전이었고,
-		//    클램프가 있다고 착각만 하고 있었다.
+		//    m_Pitch is in radians (GetOrientation() feeds it straight into glm::quat(vec3(...)),
+		//    whose constructor takes radians). The old code clamped at +/-89, but that was in
+		//    degrees, equivalent to +/-5100 degrees, and blocked nothing -- so rotation was always
+		//    unlimited, and the clamp was only an illusion.
 		//
-		//    극점을 넘으면 카메라가 뒤집히고 GetUpDirection().y가 음수가 된다.
-		//    위 yawSign이 그때 좌우 입력을 반전시켜 조작감을 유지한다 — 마야와 같은 처리다.
+		//    Past the pole the camera flips over and GetUpDirection().y goes negative.
+		//    The yawSign above then inverts horizontal input to keep the feel -- same as Maya.
 		//
-		//    이 무한 누적이 안전한 이유: quat(vec3(-pitch, -yaw, 0))은 각도가 아무리 커도
-		//    잘 정의된다. 예전에 터졌던 건 누적이 아니라 glm::eulerAngles로 되뽑던 쪽이었다.
+		//    Why this unbounded accumulation is safe: quat(vec3(-pitch, -yaw, 0)) is well defined
+		//    at any angle. What used to break was not the accumulation but the re-extraction with glm::eulerAngles.
 		m_Position = CalculatePosition();
 	}
 
@@ -105,21 +105,21 @@ namespace AppWMs {
 	{
 		m_Position = CalculatePosition();
 
-		// ⚠️ 예전엔 여기서 GetOrientation()으로 쿼터니언을 만든 뒤
-		//    glm::eulerAngles()로 다시 오일러를 뽑아 델타 누적했다. 그게 버그였다.
+		// WARNING: this used to build a quaternion with GetOrientation() here and then pull Euler
+		//    angles back out with glm::eulerAngles() to accumulate a delta. That was the bug.
 		//
-		//    glm의 eulerAngles는 yaw를 asin으로 구한다(gtc/quaternion.inl:41).
-		//    치역이 ±90°라, 카메라 yaw가 그걸 넘는 순간 같은 회전을 다른 조합으로
-		//    재표현한다 — pitch와 roll을 각각 180° 뒤집어서. roll이 Z축이므로
-		//    화면에선 "Z축 기준 플리핑"으로 보였다. 짐벌락처럼 보이지만 실제로는
-		//    쿼터니언→오일러 추출의 분기 문제다(쿼터니언 자체는 멀쩡했다).
+		//    glm's eulerAngles derives yaw with asin (gtc/quaternion.inl:41).
+		//    Its range is +/-90 degrees, so the moment the camera yaw passes it, the same rotation
+		//    is re-expressed as a different combination -- pitch and roll each flipped by 180.
+		//    Roll is the Z axis, so on screen it looked like "flipping about Z". It resembles gimbal
+		//    lock, but it is really a branch problem in quaternion->Euler extraction (the quaternion itself was fine).
 		//
-		//    게다가 `+=` 델타 누적이라 한순간의 180° 점프가 영구히 남았다.
+		//    On top of that it was a += delta accumulation, so one momentary 180-degree jump stayed forever.
 		//
-		//    해법: 추출을 아예 하지 않는다. 컨트롤러가 이미 pitch/yaw를 알고 있으니
-		//    그대로 넘긴다. TransformComponent::getLocalMatrix()가 이 값을
-		//    glm::quat(glm::radians(rotate))로 되돌리는데, 그게 곧 GetOrientation()과
-		//    같은 쿼터니언이라 왕복 손실이 0이다.
+		//    The fix: do not extract at all. The controller already knows pitch/yaw, so it passes
+		//    them straight through. TransformComponent::getLocalMatrix() turns the value back into
+		//    glm::quat(glm::radians(rotate)), which is the same quaternion GetOrientation() makes,
+		//    so the round-trip loss is zero.
 		trans = m_Position;
 		rot = glm::degrees(glm::vec3(-m_Pitch, -m_Yaw, 0.0f));
 	}

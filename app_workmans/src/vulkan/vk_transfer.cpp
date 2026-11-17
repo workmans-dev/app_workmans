@@ -30,7 +30,7 @@ namespace AppWMs {
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers = &cmd;
 
-			// 🟢 펜스로 국소 대기 (vkQueueWaitIdle은 큐 전체를 멈춤 → 스레드 업로드 시 치명적)
+			// Wait locally with a fence (vkQueueWaitIdle stalls the whole queue -> fatal for threaded uploads)
 			VkFenceCreateInfo fenceInfo{};
 			fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			VkFence fence = VK_NULL_HANDLE;
@@ -55,7 +55,7 @@ namespace AppWMs {
 			const uint32_t graphicsFamily = indices.graphicsFamily.value();
 			const bool     dedicated = indices.hasDedicatedTransfer();
 
-			// 1. staging 버퍼 생성 (host-visible, 자동 매핑)
+			// 1. Create the staging buffer (host-visible, auto-mapped)
 			VkBufferCreateInfo stagingCI{};
 			stagingCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			stagingCI.size = size;
@@ -72,14 +72,14 @@ namespace AppWMs {
 			VmaAllocationInfo stagingOut{};
 			if (vmaCreateBuffer(allocator, &stagingCI, &stagingAI,
 				&staging, &stagingMem, &stagingOut) != VK_SUCCESS) {
-				APP_WMS_CORE_ERROR("staging 버퍼 생성 실패!");
+				APP_WMS_CORE_ERROR("Failed to create staging buffer!");
 				return;
 			}
 
 			memcpy(stagingOut.pMappedData, data, (size_t)size);
 			vmaFlushAllocation(allocator, stagingMem, 0, size);
 
-			// 2. 전송 큐: 복사 + (전용이면) release 배리어
+			// 2. Transfer queue: copy + (if dedicated) the release barrier
 			VkCommandBuffer cmd = BeginSingleTime(device, ctx->getTransferCommandPool());
 
 			VkBufferCopy copyRegion{};
@@ -94,7 +94,7 @@ namespace AppWMs {
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
 			if (dedicated) {
-				// release: dstAccessMask는 반드시 0, 소유권을 graphics로 양도
+				// release: dstAccessMask must be 0; ownership is handed over to graphics
 				barrier.dstAccessMask = 0;
 				barrier.srcQueueFamilyIndex = transferFamily;
 				barrier.dstQueueFamilyIndex = graphicsFamily;
@@ -103,7 +103,7 @@ namespace AppWMs {
 					0, 0, nullptr, 1, &barrier, 0, nullptr);
 			}
 			else {
-				// 같은 패밀리 → 소유권 이동 없음, 단순 메모리 배리어
+				// Same family -> no ownership transfer, just a plain memory barrier
 				barrier.dstAccessMask = dstAccessMask;
 				barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -114,7 +114,7 @@ namespace AppWMs {
 
 			EndSingleTime(device, ctx->getTransferCommandPool(), ctx->getTransferQueue(), cmd);
 
-			// 3. 전용 큐였다면 graphics 쪽에서 acquire 배리어로 소유권 수령
+			// 3. If it was a dedicated queue, graphics takes ownership with an acquire barrier
 			if (dedicated) {
 				VkCommandBuffer gcmd = BeginSingleTime(device, ctx->getGraphicsCommandPool());
 
@@ -129,7 +129,7 @@ namespace AppWMs {
 				EndSingleTime(device, ctx->getGraphicsCommandPool(), ctx->getGraphicsQueue(), gcmd);
 			}
 
-			// 4. staging 정리
+			// 4. Clean up staging
 			vmaDestroyBuffer(allocator, staging, stagingMem);
 		}
 	}

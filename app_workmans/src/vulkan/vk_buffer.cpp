@@ -5,11 +5,11 @@
 
 namespace AppWMs {
 
-	// ─────────────────────────────────────────────
+	// ---------------------------------------------
 	// VulkanVertexBuffer
-	// ─────────────────────────────────────────────
+	// ---------------------------------------------
 
-	// 정적: device-local + staging 업로드
+	// Static: device-local + staging upload
 	VulkanVertexBuffer::VulkanVertexBuffer(float* vertices, uint32_t size)
 		: m_Size(size), m_Dynamic(false)
 	{
@@ -23,21 +23,21 @@ namespace AppWMs {
 		bufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 		VmaAllocationCreateInfo allocCI{};
-		allocCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;  // VRAM 우선
+		allocCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;  // prefer VRAM
 
 		if (vmaCreateBuffer(allocator, &bufferCI, &allocCI,
 			&m_Buffer, &m_Alloc, nullptr) != VK_SUCCESS) {
-			APP_WMS_CORE_ERROR("정적 VertexBuffer 생성 실패!");
+			APP_WMS_CORE_ERROR("Failed to create static VertexBuffer!");
 			return;
 		}
 
-		// staging 경유 업로드 (정점 입력 단계에서 읽힘)
+		// Upload via staging (read at the vertex input stage)
 		VulkanTransfer::UploadBuffer(m_Buffer, vertices, size,
 			VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
 			VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 	}
 
-	// 동적: host-visible, 매핑 유지
+	// Dynamic: host-visible, stays mapped
 	VulkanVertexBuffer::VulkanVertexBuffer(uint32_t size)
 		: m_Size(size), m_Dynamic(true)
 	{
@@ -57,10 +57,10 @@ namespace AppWMs {
 		VmaAllocationInfo outInfo{};
 		if (vmaCreateBuffer(allocator, &bufferCI, &allocCI,
 			&m_Buffer, &m_Alloc, &outInfo) != VK_SUCCESS) {
-			APP_WMS_CORE_ERROR("동적 VertexBuffer 생성 실패!");
+			APP_WMS_CORE_ERROR("Failed to create dynamic VertexBuffer!");
 			return;
 		}
-		m_Mapped = outInfo.pMappedData;   // 매핑 포인터 보관
+		m_Mapped = outInfo.pMappedData;   // keep the mapped pointer
 	}
 
 	VulkanVertexBuffer::~VulkanVertexBuffer() {
@@ -71,15 +71,15 @@ namespace AppWMs {
 
 	void VulkanVertexBuffer::setData(const void* VB, uint32_t size) {
 		if (!m_Dynamic) {
-			APP_WMS_CORE_ERROR("정적 VertexBuffer에는 setData 불가!");
+			APP_WMS_CORE_ERROR("setData is not allowed on a static VertexBuffer!");
 			return;
 		}
 		std::memcpy(m_Mapped, VB, (size_t)size);
 	}
 
-	// ─────────────────────────────────────────────
-	// VulkanIndexBuffer  (정적 device-local)
-	// ─────────────────────────────────────────────
+	// ---------------------------------------------
+	// VulkanIndexBuffer  (static, device-local)
+	// ---------------------------------------------
 
 	VulkanIndexBuffer::VulkanIndexBuffer(uint32_t* indices, uint32_t count)
 		: m_Count(count)
@@ -99,7 +99,7 @@ namespace AppWMs {
 
 		if (vmaCreateBuffer(allocator, &bufferCI, &allocCI,
 			&m_Buffer, &m_Alloc, nullptr) != VK_SUCCESS) {
-			APP_WMS_CORE_ERROR("IndexBuffer 생성 실패!");
+			APP_WMS_CORE_ERROR("Failed to create IndexBuffer!");
 			return;
 		}
 

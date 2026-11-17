@@ -11,41 +11,41 @@ namespace AppWMs {
 
 		APP_WMS_CORE_ASSERTS(!pm_Instance, "App already exists!");
 		pm_Instance = this;
-		// 1. 창문 만들기 (Vulkan Instance, Device 등 기본 뼈대 생성)
+		// 1. Create the window (builds the basic skeleton: Vulkan instance, device, etc.)
 		pm_window_ptr = std::unique_ptr<Window>(Window::create());
 		pm_window_ptr->setData_EventCallBack(BIND_EVENT_FN(App::onEvent));
 
-		// 2. 렌더러 초기화 (여기서 벌칸 RenderPass, DescriptorPool 등 핵심 부품 완성!)
+		// 2. Initialize the renderer (this is where the core Vulkan parts -- RenderPass, DescriptorPool -- are finished)
 		Renderer::init();
 
-		// 3. 💥 드디어 임구이 레이어 오브젝트 생성! (여기서 오브젝트가 메모리에 올라갑니다)
-		pm_imGuiLayer_ptr = new ImGuiLayer(); // 내부 onAttach() 실행되어 순수 ImGui 컨텍스트 생성
+		// 3. Finally create the ImGui layer object (this is where the object lands in memory)
+		pm_imGuiLayer_ptr = new ImGuiLayer(); // its onAttach() runs and creates a pure ImGui context
 		pushOverlay(pm_imGuiLayer_ptr);
 
-		// 4. 벌칸 부품을 주입합니다!
+		// 4. Inject the Vulkan parts
 		pm_imGuiLayer_ptr->InitVulkanBackend(
 			static_cast<GLFWwindow*>(pm_window_ptr->getGLFWWindow()));
 	}
 
 
 	App::~App() {
-		// ⚠️ 종료는 순서가 전부다. 소멸자 기본 순서에 맡기면 정적 수명인
-		//    RendererAPI가 디바이스보다 늦게 파괴돼 use-after-free가 난다.
-		//    그래서 여기서 명시적으로 몰아준다.
+		// WARNING: shutdown is all about order. Left to the default destructor order, RendererAPI,
+		//    which has static lifetime, is destroyed later than the device and we get use-after-free.
+		//    So it is all driven explicitly here.
 		//
-		//  1. GPU가 마지막 프레임을 끝낼 때까지 대기
-		//     (close 이벤트가 온 프레임도 끝까지 submit되므로 반드시 필요)
+		//  1. Wait until the GPU finishes the last frame
+		//     (required, because even the frame the close event arrived in gets submitted in full)
 		RendererCommand::waitIdle();
 
-		//  2. 레이어 파괴 — MainWindow(FrameBuffer/파이프라인) 다음 ImGuiLayer(벌칸 백엔드).
-		//     FrameBuffer 소멸자가 ImGui_ImplVulkan_RemoveTexture를 부르므로 이 순서여야 한다.
+		//  2. Destroy the layers -- MainWindow (RenderTarget/pipeline) first, then ImGuiLayer (Vulkan backend).
+		//     The RenderTarget destructor calls ImGui_ImplVulkan_RemoveTexture, so it has to be this order.
 		pm_layerStack.clear();
 
-		//  3. RendererAPI 리소스 — 디스크립터풀은 ImGui가 쓰던 것이라 2번 뒤여야 한다
+		//  3. RendererAPI resources -- the descriptor pool was ImGui's, so this comes after step 2
 		Renderer::shutdown();
 
-		//  4. VulkanContext(device/surface/instance)는 pm_window_ptr 소멸자가 파괴한다.
-		//     멤버 소멸은 이 본문이 끝난 뒤이므로 자연히 마지막이 된다.
+		//  4. VulkanContext (device/surface/instance) is destroyed by the pm_window_ptr destructor.
+		//     Member destruction happens after this body ends, so it naturally comes last.
 	}
 
 	// send all events of layer events to Win_window : pm_window_ptr
@@ -68,26 +68,26 @@ namespace AppWMs {
 			Timer timer = time - pm_dt;
 			pm_dt = timer;
 
-			// 🟢 이벤트 폴링은 프레임 최상단 (입력 지연 최소화)
+			// Event polling at the very top of the frame (minimizes input latency)
 			pm_window_ptr->onUpdate();
 
-			// 🟢 프레임 개시: acquire + 커맨드버퍼 begin.
-			//    실패(minimized/out-of-date)면 이번 프레임 전체 스킵.
+			// Frame start: acquire + begin the command buffer.
+			//    On failure (minimized / out-of-date) the whole frame is skipped.
 			if (pm_minimized || !Renderer::beginFrame()) {
 				continue;
 			}
 
-			// 오프스크린 렌더 (각 레이어가 자기 FrameBuffer에 3D 씬 기록)
+			// Offscreen render (each layer records the 3D scene into its own RenderTarget)
 			for (Layer* layer : pm_layerStack)
 				layer->onUpdate(timer);
 
-			// ImGui (스왑체인 렌더패스에 UI 기록)
+			// ImGui (records the UI into the swapchain render pass)
 			pm_imGuiLayer_ptr->begin();
 			for (Layer* layer : pm_layerStack)
 				layer->onImGuiRender();
 			pm_imGuiLayer_ptr->end();
 
-			// 🟢 프레임 종결: 커맨드버퍼 end + submit + present
+			// Frame end: command buffer end + submit + present
 			Renderer::endFrame();
 		}
 	}
@@ -102,11 +102,11 @@ namespace AppWMs {
 		uint32_t w = e.getWidth();
 		uint32_t h = e.getHeight();
 
-		// ⚠️ 예전엔 true로 세운 직후 무조건 false로 덮어써서 최소화 판정이 죽어 있었다.
-		//    그 상태로 리사이즈 경로가 붙으면 extent 0인 스왑체인을 만들려다 터진다.
+		// WARNING: this used to be set true and then unconditionally overwritten with false, which
+		//    left the minimization check dead. With the resize path attached that blows up trying to build a swapchain with extent 0.
 		if (w == 0 || h == 0) {
 			pm_minimized = true;
-			return false;   // 최소화 중엔 재생성을 요청해봐야 못 만든다
+			return false;   // while minimized, asking for recreation cannot build anything
 		}
 
 		pm_minimized = false;

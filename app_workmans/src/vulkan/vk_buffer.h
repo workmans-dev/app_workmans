@@ -7,13 +7,13 @@ namespace AppWMs {
 
 	class VulkanVertexBuffer : public VertexBuffer {
 	public:
-		// 정적: 데이터 즉시 업로드 (device-local, staging 경유)
+		// Static: uploads the data immediately (device-local, via staging)
 		VulkanVertexBuffer(float* vertices, uint32_t size);
-		// 동적: 빈 버퍼 (host-visible, 매 프레임 setData)
+		// Dynamic: empty buffer (host-visible, setData every frame)
 		VulkanVertexBuffer(uint32_t size);
 		virtual ~VulkanVertexBuffer();
 		// is this being used???---------------
-		virtual void bind() const override {}    // Vulkan은 draw 기록 시 바인딩 (여기선 no-op)
+		virtual void bind() const override {}    // Vulkan binds while recording the draw (no-op here)
 		virtual void unbind() const override {}
 		// ----------------------------------------
 		virtual const BufferLayout& getLayout() const override { return m_Layout; }
@@ -25,7 +25,7 @@ namespace AppWMs {
 	private:
 		VkBuffer      m_Buffer = VK_NULL_HANDLE;
 		VmaAllocation m_Alloc = nullptr;
-		void* m_Mapped = nullptr;   // 동적일 때만 유효
+		void* m_Mapped = nullptr;   // only valid when dynamic
 		uint32_t      m_Size = 0;
 		bool          m_Dynamic = false;
 		BufferLayout  m_Layout;

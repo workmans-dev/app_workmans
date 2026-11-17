@@ -2,13 +2,13 @@
 
 namespace AppWMs {
 
-    // "어떤 형상인가" — NURBS 서피스.
+    // "What shape is it" -- a NURBS surface.
     //
-    // 메쉬·커브와 별도인 이유: 데이터가 컨트롤 포인트 격자 + knot vector라
-    // 구조 자체가 다르고, 렌더도 테셀레이션을 거친 뒤에야 삼각형이 된다.
+    // Why it is separate from mesh and curve: the data is a control point grid plus a knot
+    // vector, so the structure itself differs, and it only becomes triangles after tessellation.
     //
-    // 🚧 내용은 나중에 채운다 — 컨트롤 포인트 그리드 / u,v 차수 / knot vector /
-    //    가중치 / 트림 커브 등.
+    // TODO: fill in the contents later -- control point grid / u,v degree / knot vector /
+    //    weights / trim curves, etc.
     struct NurbsComponent {
         static constexpr const char* TypeName() { return "NurbsComponent"; }
     };

@@ -75,25 +75,25 @@ namespace AppWMs {
 		}
 	}
 
-	// 트랜스폼 로드. 두 경로(기존 기본 카메라 재사용 / 새 엔티티 생성)가 같은 규칙을
-	// 써야 해서 함수로 뺐다 — 한쪽만 고치면 저장은 되는데 로드가 반만 되는 버그가 난다.
+	// Transform load. Both paths (reuse an existing default camera / create a new entity) have to
+	// use the same rules, so it was pulled into a function -- fixing only one gives a bug where saving works but loading is half done.
 	static void load_transform_data_fromFile(const YAML::Node& transComp_data, TransformComponent& transComp)
 	{
 		transComp.translate = transComp_data["Translate"].as<glm::vec3>();
 		transComp.scale = transComp_data["Scale"].as<glm::vec3>();
 
-		// ⚠️ 모드를 값보다 **먼저** 세운다. setRotationMode는 "회전을 유지하며 표현만
-		//    바꾸는" 함수라, 값을 넣은 뒤에 부르면 방금 읽은 값을 변환해 덮어쓴다.
-		//    먼저 부르면 그 변환 결과는 바로 아래 대입이 전부 덮으므로 무해하다.
-		//    옛 .wmsa엔 이 키가 없다 → 기본값(XYZ Euler) 유지 = 하위 호환.
+		// WARNING: set the mode *before* the values. setRotationMode is the "keep the rotation, change
+		//    only the representation" function, so calling it after the values converts and overwrites what was just read.
+		//    Called first, its conversion result is entirely overwritten by the assignments just below, so it is harmless.
+		//    An old .wmsa has no such key -> the default (XYZ Euler) is kept = backward compatible.
 		if (transComp_data["RotationMode"])
 			transComp.setRotationMode((RotationMode)transComp_data["RotationMode"].as<int>());
 
 		transComp.rotate = transComp_data["Rotate"].as<glm::vec3>();
 
 		if (transComp_data["RotateQuat"]) {
-			// 파일엔 [w, x, y, z] 순으로 적혀 있다. glm::quat 생성자도 (w,x,y,z)다.
-			// (메모리 배치는 (x,y,z,w)라 캐스팅으로 넘기면 뒤집힌다)
+			// The file writes them in [w, x, y, z] order. The glm::quat constructor is (w,x,y,z) too.
+			// (The memory layout is (x,y,z,w), so passing it by cast would flip them)
 			const glm::vec4 packed = transComp_data["RotateQuat"].as<glm::vec4>();
 			transComp.rotateQuat = glm::quat(packed[0], packed[1], packed[2], packed[3]);
 		}
@@ -114,9 +114,9 @@ namespace AppWMs {
 	static void serializeComponent(YAML::Emitter& out, Entity& entity, BeginMap insert) {
 		if (entity.hasComponent<T>()) {
 			auto& comp = entity.getComponent<T>();
-			// 타입 이름은 컴파일 타임 상수다. 예전엔 컴포넌트마다 std::string으로
-			// 들고 있었는데, ECS 배열에 인스턴스당 32바이트(+ 힙)를 얹는 낭비였다.
-			// 방출되는 문자열은 동일하므로 .wmsa 포맷은 그대로다.
+			// The type name is a compile-time constant. It used to be held per component as a
+			// std::string, wasting 32 bytes (plus heap) per instance in the ECS arrays.
+			// The emitted string is identical, so the .wmsa format is unchanged.
 			out << YAML::Key << T::TypeName() << YAML::BeginMap;
 			insert(comp);
 			//out << YAML::Key << keyName << YAML::Value << tagComp.name;
@@ -144,11 +144,11 @@ namespace AppWMs {
 					out << YAML::Key << "Translate" << YAML::Value << comp.translate;
 					out << YAML::Key << "Rotate" << YAML::Value << comp.rotate;
 					out << YAML::Key << "Scale" << YAML::Value << comp.scale;
-					// 회전 모드와 쿼터니언은 새 필드다. 옛 .wmsa엔 없으므로
-					// 로드 쪽이 없을 때 기본값(XYZ Euler)으로 떨어지게 해뒀다.
+					// The rotation mode and quaternion are new fields. An old .wmsa does not have them,
+					// so the load side is set up to fall back to the default (XYZ Euler) when absent.
 					out << YAML::Key << "RotationMode" << YAML::Value << (int)comp.getRotationMode();
-					// ⚠️ vec4로 적되 순서는 (w,x,y,z)다. glm::quat의 메모리 배치는
-					//    (x,y,z,w)라 무심코 캐스팅하면 뒤집힌다.
+					// WARNING: written as a vec4, but the order is (w,x,y,z). glm::quat's memory layout is
+					//    (x,y,z,w), so casting it carelessly flips them.
 					out << YAML::Key << "RotateQuat" << YAML::Value
 						<< glm::vec4(comp.rotateQuat.w, comp.rotateQuat.x,
 							comp.rotateQuat.y, comp.rotateQuat.z);
@@ -220,10 +220,10 @@ namespace AppWMs {
 					load_transform_data_fromFile(entity_data["TransformComponent"], transComp);
 			}
 			else {
-				// ⚠️ "무슨 종류인가"를 파일에 따로 저장하지 않는다 — 어떤 컴포넌트가
-				//    들어 있는지가 그 질문의 답이다. TransformComponent가 있으면
-				//    공간에 있는 오브젝트고, 없으면 위치 없는 엔티티(모디파이어 등)다.
-				//    종류 필드를 따로 두면 그 필드와 실제 구성이 어긋날 수 있다.
+				// WARNING: "what kind is this" is not stored separately in the file -- which components
+				//    it contains is the answer to that question. With a TransformComponent it is an object
+				//    in space; without one it is a position-less entity (a modifier, etc.).
+				//    A separate kind field could diverge from the actual composition.
 				Entity entity = entity_data["TransformComponent"]
 					? pm_scene->createObject(camName_data)
 					: pm_scene->createEntity(camName_data);
@@ -241,7 +241,7 @@ namespace AppWMs {
 					auto& shadingComp_data = entity_data["ShadingComponent"];
 					entity.addComponent<ShadingComponent>(shadingComp_data["Color"].as<glm::vec4>());
 				}
-				// VisComponent는 오브젝트에만 붙는다 (createObject가 얹는다).
+				// VisComponent is attached to objects only (createObject adds it).
 				if (entity_data["VisComponent"] && entity.hasComponent<VisComponent>()) {
 					auto& visComp_data = entity_data["VisComponent"];
 					entity.getComponent<VisComponent>().visible = visComp_data["Visible"].as<int>();

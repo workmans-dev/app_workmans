@@ -12,11 +12,11 @@ namespace AppWMs {
 	}
 
 	void LayerStack::clear() {
-		// ⚠️ 벡터 순서가 곧 파괴 의존 순서다. 뒤집으면 안 된다.
-		//    [MainWindow, ImGuiLayer] 순이라 FrameBuffer가 ImGui 벌칸 백엔드보다 먼저 파괴된다.
-		//    ~VulkanRenderTarget이 ImGui_ImplVulkan_RemoveTexture를 부르므로 이 순서여야 한다.
+		// WARNING: the vector order is the destruction dependency order. Do not reverse it.
+		//    It is [MainWindow, ImGuiLayer], so the RenderTarget is destroyed before ImGui's Vulkan backend.
+		//    ~VulkanRenderTarget calls ImGui_ImplVulkan_RemoveTexture, so it has to be this order.
 		for (Layer* layer : m_layers) {
-			layer->onDetach();   // 예전엔 호출되지 않아 ImGui_ImplVulkan_Shutdown이 실행 안 됐다
+			layer->onDetach();   // this used not to be called, so ImGui_ImplVulkan_Shutdown never ran
 			delete layer;
 		}
 		m_layers.clear();

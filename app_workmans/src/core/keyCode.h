@@ -6,22 +6,22 @@ namespace AppWMs
 	using KeyCode = uint16_t;
 
 	// ─────────────────────────────────────────────────────────────
-	//  키 목록 — **단일 원본**
+	//  Key list -- the *single source of truth*
 	//
-	//  아래 enum과 keyMap.cpp의 "문자열 → 코드" 사전이 둘 다 이 목록에서 생성된다.
-	//  목록을 두 벌 두면 키를 추가할 때 한쪽만 고쳐서, enum엔 있는데 keymap.yaml에선
-	//  못 쓰는 키가 조용히 생긴다. 한 목록에서 뽑으면 그 어긋남이 원리적으로 불가능하다.
+	//  Both the enum below and keyMap.cpp's "string -> code" dictionary are generated from this list.
+	//  Two copies of the list means adding a key by fixing only one side, which silently creates
+	//  a key that exists in the enum but cannot be used in keymap.yaml. One list makes that impossible.
 	//
-	//  여기 적힌 이름이 곧 keymap.yaml에 쓰는 이름이다 ("LeftShift", "F1", "D0"...).
-	//  값은 glfw3.h에서 왔다.
+	//  The names written here are exactly the names used in keymap.yaml ("LeftShift", "F1", "D0"...).
+	//  The values came from glfw3.h.
 	//
-	//  ⚠️ 매개변수 이름이 흔한 X가 아니라 WMS_X인 이유 — 목록 안에 알파벳 X 키가 있다.
-	//     매개변수를 X로 두면 `X(X, 88)` 줄의 **두 번째 X까지** 치환되어
-	//     `Key::<전달한 매크로 이름>` 같은 소리가 나온다. 실제로 그 에러를 밟았다.
+	//  WARNING: why the parameter is named WMS_X rather than the usual X -- there is an X key in the list.
+	//     With the parameter named X, the X(X, 88) line gets its *second* X substituted too,
+	//     producing nonsense like Key::<the macro name you passed>. That error was actually hit.
 	//
-	//  ⚠️ 예전엔 events/keyCodes.h가 GLFW 매크로(#define WMS_KEY_P 80)를 그대로
-	//     베껴 썼는데, 매크로는 전처리 단계에서 사라져 런타임에 이름이 안 남는다.
-	//     그래서 YAML에서 읽은 "P"를 코드로 되돌릴 방법이 없었다. 그 파일은 제거했다.
+	//  WARNING: events/keyCodes.h used to copy the GLFW macros verbatim (#define WMS_KEY_P 80),
+	//     but a macro disappears in the preprocessor, so no name survives to runtime.
+	//     That left no way to turn the "P" read from YAML back into a code. That file was removed.
 	// ─────────────────────────────────────────────────────────────
 #define WMS_KEY_LIST(WMS_X)          \
 	WMS_X(Space,        32)          \

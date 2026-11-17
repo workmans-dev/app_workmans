@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "vulkan/vk_renderTarget.h"
 #include "vulkan/vulkanContext.h"
-#include "vulkan/vk_swapChain.h"   // CreateImageView / FindDepthFormat 재사용
-#include "vulkan/vk_transfer.h"    // BeginSingleTime / EndSingleTime 재사용
+#include "vulkan/vk_swapChain.h"   // reuses CreateImageView / FindDepthFormat
+#include "vulkan/vk_transfer.h"    // reuses BeginSingleTime / EndSingleTime
 #include "vulkan/vulkanRenderer.h"
 #include "renderer/rendererCommand.h"
 
@@ -13,22 +13,22 @@ namespace AppWMs {
     VulkanRenderTarget::VulkanRenderTarget(const RenderTargetSpec& spec)
         : m_Spec(spec)
     {
-        // 어태치먼트 해석 — 색 N개 + 깊이 0~1개.
-        // 나열 순서가 그대로 렌더패스 슬롯 번호이자 프래그먼트 셰이더의 out location이다.
+        // Attachment interpretation -- N color + 0 or 1 depth.
+        // The order listed is both the render pass slot number and the out location in the fragment shader.
         for (AttachmentFormat attach : m_Spec.attachments) {
             switch (attach) {
             case AttachmentFormat::RGBA8: {
                 ColorAttachment c;
                 c.format = VK_FORMAT_R8G8B8A8_UNORM;
-                c.sampled = true;    // ImGui가 뷰포트 패널에 붙여 보여준다
+                c.sampled = true;    // ImGui puts this in the viewport panel
                 m_Colors.push_back(c);
                 break;
             }
             case AttachmentFormat::R32SINT: {
                 ColorAttachment c;
-                // R32_SINT는 벌칸 필수 지원 포맷(COLOR_ATTACHMENT)이라 가용성 조회가 필요 없다.
+                // R32_SINT is a Vulkan mandatory format (COLOR_ATTACHMENT), so no availability query is needed.
                 c.format = VK_FORMAT_R32_SINT;
-                c.sampled = false;   // 읽는 쪽이 셰이더가 아니라 CPU다 (P-b 리드백)
+                c.sampled = false;   // the reader is the CPU, not a shader (P-b readback)
                 m_Colors.push_back(c);
                 break;
             }
@@ -45,8 +45,8 @@ namespace AppWMs {
                 VulkanContext::Get()->getPhysicalDevice());
         }
 
-        createRenderPass();       // 크기와 무관 → 여기서 딱 1회
-        createReadbackBuffers();  // 4B짜리라 이것도 크기와 무관
+        createRenderPass();       // size-independent -> exactly once, here
+        createReadbackBuffers();  // 4B each, so this is size-independent too
         invalidate();
     }
 
@@ -60,10 +60,10 @@ namespace AppWMs {
     }
 
     // =========================================================================
-    // 픽셀 리드백 — 스테이징 버퍼
+    // Pixel readback -- staging buffers
     // =========================================================================
     void VulkanRenderTarget::createReadbackBuffers() {
-        // 정수 어태치먼트가 없으면 읽을 게 없다 (셰이더 프리뷰 타겟 등)
+        // With no integer attachment there is nothing to read (a shader preview target, say)
         bool needsReadback = false;
         for (const ColorAttachment& c : m_Colors) {
             if (!c.sampled) { needsReadback = true; break; }
@@ -74,14 +74,14 @@ namespace AppWMs {
 
         VkBufferCreateInfo bufCI{};
         bufCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufCI.size = sizeof(int32_t);   // 텍셀 딱 하나
+        bufCI.size = sizeof(int32_t);   // exactly one texel
         bufCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         bufCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VmaAllocationCreateInfo allocCI{};
         allocCI.usage = VMA_MEMORY_USAGE_AUTO;
-        // CPU가 읽어야 하므로 host-visible. MAPPED로 상주 매핑을 받아둔다 —
-        // 4바이트를 매 클릭마다 map/unmap할 이유가 없다.
+        // The CPU has to read it, so host-visible. MAPPED gives us a persistent mapping --
+        // there is no reason to map/unmap four bytes on every click.
         allocCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
             | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
@@ -114,7 +114,7 @@ namespace AppWMs {
     void VulkanRenderTarget::requestPixelRead(int attachmentIndex, uint32_t x, uint32_t y) {
         if (m_Readbacks.empty()) return;
         if (attachmentIndex < 0 || attachmentIndex >= (int)m_Colors.size()) return;
-        // 패널 크기와 타겟 크기는 리사이즈 도중 한 프레임 어긋날 수 있다.
+        // The panel size and the target size can be one frame apart during a resize.
         if (x >= m_Spec.w || y >= m_Spec.h) return;
 
         m_PendingReadAttachment = attachmentIndex;
@@ -125,12 +125,12 @@ namespace AppWMs {
     bool VulkanRenderTarget::pollPixelRead(int32_t& outValue) {
         if (!m_HasResult) return false;
         outValue = m_Result;
-        m_HasResult = false;   // 한 번 꺼내면 사라진다
+        m_HasResult = false;   // taking it once consumes it
         return true;
     }
 
-    // endPass()가 매 프레임 부른다. 렌더패스 **밖**이어야 한다 — 전송 명령은
-    // 렌더패스 안에서 기록할 수 없다.
+    // endPass() calls this every frame. It must be *outside* the render pass --
+    // transfer commands cannot be recorded inside one.
     void VulkanRenderTarget::harvestAndRecordPixelRead(VkCommandBuffer cmd) {
         if (m_Readbacks.empty()) return;
 
@@ -138,24 +138,24 @@ namespace AppWMs {
         const uint32_t slot = ctx->getCurrentFrameIndex();
         Readback& rb = m_Readbacks[slot];
 
-        // ── 1. 수확. 이 슬롯에 걸린 복사는 2프레임 전에 기록된 것이고,
-        //    beginFrame이 이 슬롯을 재사용하기 전에 fence[slot]을 기다렸으므로
-        //    지금 시점엔 반드시 끝나 있다. 그래서 여기서 기다릴 필요가 없다.
+        // -- 1. Harvest. The copy sitting in this slot was recorded two frames ago, and
+        //    beginFrame waited on fence[slot] before reusing this slot, so by now it is
+        //    guaranteed finished. That is why there is nothing to wait for here.
         if (rb.pending) {
-            // 비코히런트 메모리면 CPU 캐시를 무효화해야 한다. 코히런트면 no-op.
+            // Non-coherent memory needs the CPU cache invalidated. On coherent memory this is a no-op.
             vmaInvalidateAllocation(ctx->getAllocator(), rb.alloc, 0, sizeof(int32_t));
             m_Result = *reinterpret_cast<const int32_t*>(rb.mapped);
             m_HasResult = true;
             rb.pending = false;
         }
 
-        // ── 2. 새 요청 기록
+        // -- 2. Record the new request
         if (m_PendingReadAttachment < 0) return;
 
         const ColorAttachment& c = m_Colors[m_PendingReadAttachment];
 
         VkBufferImageCopy region{};
-        // 0 = "이미지 영역에 딱 맞게 촘촘히" — 1x1이라 4바이트다
+        // 0 = "tightly packed to the image region" -- at 1x1 that is four bytes
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
         region.bufferImageHeight = 0;
@@ -166,17 +166,17 @@ namespace AppWMs {
         region.imageOffset = { (int32_t)m_PendingReadX, (int32_t)m_PendingReadY, 0 };
         region.imageExtent = { 1, 1, 1 };
 
-        // 레이아웃은 렌더패스 finalLayout이 이미 TRANSFER_SRC_OPTIMAL로 만들어놨다.
-        // (sampled=false 슬롯의 finalLayout — createRenderPass 참고)
+        // The layout is already TRANSFER_SRC_OPTIMAL, set by the render pass finalLayout.
+        // (the finalLayout of a sampled=false slot -- see createRenderPass)
         vkCmdCopyImageToBuffer(cmd, c.image,
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rb.buffer, 1, &region);
 
         rb.pending = true;
-        m_PendingReadAttachment = -1;   // 클릭 한 번에 복사 한 번
+        m_PendingReadAttachment = -1;   // one copy per click
     }
 
     // =========================================================================
-    // RenderPass — 어태치먼트 구성 기술서. 크기를 담지 않으므로 리사이즈와 무관.
+    // RenderPass -- the attachment layout description. It holds no size, so resize does not touch it.
     // =========================================================================
     void VulkanRenderTarget::createRenderPass() {
         VkDevice device = VulkanContext::Get()->getDevice();
@@ -186,18 +186,18 @@ namespace AppWMs {
         attachments.reserve(m_Colors.size() + 1);
         colorRefs.reserve(m_Colors.size());
 
-        // attachment 0..N-1 — 색.
-        // finalLayout이 스왑체인 패스와 갈리는 지점: 여기선 present가 아니다.
-        //   sampled → ImGui가 셰이더로 읽는다   → SHADER_READ_ONLY_OPTIMAL
-        //   그 외   → CPU가 복사해 간다(id 버퍼) → TRANSFER_SRC_OPTIMAL
-        // ⚠️ P-b에서 실제로 복사를 넣을 땐 아래 deps[1]의 dst 마스크에
-        //    TRANSFER/TRANSFER_READ를 더해야 한다.
+        // attachment 0..N-1 -- color.
+        // This is where finalLayout diverges from the swapchain pass: here it is not present.
+        //   sampled   -> ImGui reads it in a shader        -> SHADER_READ_ONLY_OPTIMAL
+        //   otherwise -> the CPU copies it out (id buffer) -> TRANSFER_SRC_OPTIMAL
+        // WARNING: when the actual copy goes in for P-b, deps[1] below needs TRANSFER /
+        //    TRANSFER_READ added to its dst masks.
         for (size_t i = 0; i < m_Colors.size(); ++i) {
             VkAttachmentDescription color{};
             color.format = m_Colors[i].format;
             color.samples = VK_SAMPLE_COUNT_1_BIT;
             color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;    // 나중에 읽으므로 보존
+            color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;    // kept, because it is read later
             color.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             color.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -212,7 +212,7 @@ namespace AppWMs {
             colorRefs.push_back(ref);
         }
 
-        // 마지막 attachment — 깊이. 다음 프레임에 다시 CLEAR하므로 저장할 필요 없음.
+        // Last attachment -- depth. No need to store it; the next frame CLEARs it again.
         VkAttachmentReference depthRef{};
         if (m_HasDepth) {
             VkAttachmentDescription depth{};
@@ -226,7 +226,7 @@ namespace AppWMs {
             depth.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             attachments.push_back(depth);
 
-            // 깊이는 색 슬롯 뒤에 온다. 색이 늘면 이 번호도 같이 밀린다.
+            // Depth comes after the color slots. Add a color slot and this index shifts with it.
             depthRef.attachment = (uint32_t)m_Colors.size();
             depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         }
@@ -237,16 +237,16 @@ namespace AppWMs {
         subpass.pColorAttachments = colorRefs.data();
         subpass.pDepthStencilAttachment = m_HasDepth ? &depthRef : nullptr;
 
-        // 의존성 2개 — 이 FB는 매 프레임 "그리기 → 읽기"를 반복한다.
-        //  [0] 이전 프레임 읽기가 끝난 뒤에 이번 프레임 쓰기를 시작
-        //  [1] 이번 프레임 쓰기가 끝난 뒤에 읽기를 시작
+        // Two dependencies -- this FB repeats "draw -> read" every frame.
+        //  [0] start this frame's write only after the previous frame's read finished
+        //  [1] start the read only after this frame's write finished
         //
-        // ⚠️ "읽기"가 두 종류다 — ImGui의 셰이더 샘플링(색)과 피킹의 전송 복사(id).
-        //    P-b에서 vkCmdCopyImageToBuffer가 붙으면서 TRANSFER를 안 넣으면
-        //    복사가 렌더링 완료보다 앞설 수 있다.
+        // WARNING: there are two kinds of "read" -- ImGui's shader sampling (color) and
+        //    picking's transfer copy (id). Once vkCmdCopyImageToBuffer lands in P-b, leaving
+        //    TRANSFER out would let the copy run ahead of rendering completion.
         //
-        // ⚠️ BY_REGION은 뺐다. 그 플래그는 "같은 픽셀 위치끼리만 의존한다"는
-        //    프레임버퍼 지역성 약속인데, 이미지 전체를 훑는 전송에는 성립하지 않는다.
+        // WARNING: BY_REGION was left out. That flag is a framebuffer-locality promise -- "only the
+        //    same pixel positions depend on each other" -- which does not hold for a transfer sweeping the whole image.
         VkSubpassDependency deps[2]{};
 
         deps[0].srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -280,7 +280,7 @@ namespace AppWMs {
     }
 
     // =========================================================================
-    // 크기에 묶인 자원 — 리사이즈마다 파괴 후 재생성되는 것들
+    // Size-bound resources -- destroyed and recreated on every resize
     // =========================================================================
     void VulkanRenderTarget::invalidate() {
         auto ctx = VulkanContext::Get();
@@ -290,10 +290,10 @@ namespace AppWMs {
         VmaAllocationCreateInfo allocCI{};
         allocCI.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
-        // ── 색 이미지들: 전부 그리기 대상이고 그 뒤가 갈린다.
-        //      sampled → SAMPLED      (ImGui가 셰이더로 읽는다)
-        //      그 외   → TRANSFER_SRC (CPU가 복사해 간다 — id 버퍼)
-        //    ⚠️ usage는 이미지 생성 시점에만 정할 수 있다.
+        // -- Color images: all of them are draw targets, and what follows diverges.
+        //      sampled   -> SAMPLED      (ImGui reads it in a shader)
+        //      otherwise -> TRANSFER_SRC (the CPU copies it out -- the id buffer)
+        //    WARNING: usage can only be decided at image creation time.
         VkImageCreateInfo colorCI{};
         colorCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         colorCI.imageType = VK_IMAGE_TYPE_2D;
@@ -320,7 +320,7 @@ namespace AppWMs {
                 c.format, VK_IMAGE_ASPECT_COLOR_BIT);
         }
 
-        // ── 깊이 이미지: 뷰포트 패널 크기로 자기 것을 가진다 (2-a에서 스왑체인에서 뗀 이유)
+        // -- Depth image: it owns its own at the viewport panel size (the reason 2-a split it off the swapchain)
         if (m_HasDepth) {
             VkImageCreateInfo depthCI = colorCI;
             depthCI.format = m_DepthFormat;
@@ -335,8 +335,8 @@ namespace AppWMs {
                 m_DepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
         }
 
-        // ── 프레임버퍼: 위 뷰들을 렌더패스 어태치먼트 슬롯에 묶는다 (배열 순서 = 슬롯 번호)
-        // ⚠️ createRenderPass가 쌓은 순서(색 전부 → 깊이)와 반드시 같아야 한다.
+        // -- Framebuffer: binds the views above to the render pass attachment slots (array order = slot number)
+        // WARNING: must match the order createRenderPass built (all color, then depth).
         std::vector<VkImageView> views;
         views.reserve(m_Colors.size() + 1);
         for (const ColorAttachment& c : m_Colors) views.push_back(c.view);
@@ -356,7 +356,7 @@ namespace AppWMs {
             return;
         }
 
-        // ── 샘플러: ImGui가 이 색 이미지를 텍스처로 읽을 때 쓴다
+        // -- Sampler: used when ImGui reads this color image as a texture
         VkSamplerCreateInfo samplerCI{};
         samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerCI.magFilter = VK_FILTER_LINEAR;
@@ -373,13 +373,13 @@ namespace AppWMs {
             return;
         }
 
-        // ── 최초 레이아웃 전환 (UNDEFINED → SHADER_READ_ONLY_OPTIMAL)
-        // 렌더패스가 initialLayout=UNDEFINED라 그리기엔 문제없지만, bind() 없이
-        // 샘플링되는 프레임이 한 번이라도 있으면 validation 에러가 난다.
-        // 생성 시 1회 전환해두면 그 구멍이 막힌다.
+        // -- Initial layout transition (UNDEFINED -> SHADER_READ_ONLY_OPTIMAL)
+        // The render pass uses initialLayout=UNDEFINED, so drawing is fine, but a single frame
+        // that gets sampled without a beginPass() would raise a validation error.
+        // Doing the transition once at creation closes that hole.
         //
-        // ⚠️ sampled 슬롯만 대상이다. id 버퍼는 아무도 안 읽으므로 전환할 이유가 없고,
-        //    렌더패스가 매 프레임 UNDEFINED에서 시작하니 그대로 둬도 안전하다.
+        // WARNING: sampled slots only. Nobody reads the id buffer, so there is no reason to
+        //    transition it, and the render pass starts from UNDEFINED every frame anyway.
         {
             std::vector<VkImageMemoryBarrier> barriers;
             for (const ColorAttachment& c : m_Colors) {
@@ -412,8 +412,8 @@ namespace AppWMs {
             }
         }
 
-        // ── ImGui 디스크립터셋: 이 핸들이 곧 getColorTextureID()의 반환값.
-        //    id 버퍼는 정수 포맷이라 선형 필터링이 안 되고 샘플링할 이유도 없다.
+        // -- ImGui descriptor set: this handle is exactly what getColorTextureID() returns.
+        //    The id buffer is an integer format, so it cannot be linearly filtered and there is no reason to sample it.
         for (ColorAttachment& c : m_Colors) {
             if (!c.sampled) continue;
             c.descriptorSet = ImGui_ImplVulkan_AddTexture(m_Sampler, c.view,
@@ -428,7 +428,7 @@ namespace AppWMs {
         VkDevice     device = VulkanContext::Get()->getDevice();
         VmaAllocator allocator = VulkanContext::Get()->getAllocator();
 
-        // 디스크립터셋을 반납하지 않으면 리사이즈마다 DescriptorPool이 샌다
+        // Failing to return the descriptor sets leaks the DescriptorPool on every resize
         for (ColorAttachment& c : m_Colors) {
             if (c.descriptorSet != VK_NULL_HANDLE) {
                 ImGui_ImplVulkan_RemoveTexture(c.descriptorSet);
@@ -452,8 +452,8 @@ namespace AppWMs {
             m_DepthImage = VK_NULL_HANDLE;
             m_DepthAlloc = nullptr;
         }
-        // ⚠️ m_Colors 자체는 비우지 않는다 — 어떤 슬롯이 어떤 포맷인지는 spec에서
-        //    온 구성이라 리사이즈로 바뀌지 않는다. 핸들만 비운다.
+        // WARNING: m_Colors itself is not cleared -- which slot has which format is configuration
+        //    that came from the spec and does not change on resize. Only the handles are cleared.
         for (ColorAttachment& c : m_Colors) {
             if (c.view != VK_NULL_HANDLE) {
                 vkDestroyImageView(device, c.view, nullptr);
@@ -472,25 +472,25 @@ namespace AppWMs {
         auto ctx = VulkanContext::Get();
         VkCommandBuffer cmd = ctx->getCurrentCommandBuffer();
 
-        // clear 색은 RendererCommand::setClearColor가 넣어둔 값을 쓴다.
-        // 벌칸에서 clear()는 no-op이고 실제 지우기는 loadOp=CLEAR가 담당한다.
+        // The clear color uses the value RendererCommand::setClearColor stored.
+        // On Vulkan clear() is a no-op; loadOp=CLEAR does the actual clearing.
         const glm::vec4& cc =
             static_cast<VulkanRendererAPI*>(&RendererCommand::getAPI())->getClearColor();
 
-        // clear 값 배열의 인덱스 = 어태치먼트 슬롯 번호. createRenderPass가 쌓은
-        // 순서(색 전부 → 깊이)와 어긋나면 엉뚱한 슬롯이 지워진다.
+        // Index into the clear value array = attachment slot number. Diverge from the order
+        // createRenderPass built (all color, then depth) and the wrong slot gets cleared.
         std::vector<VkClearValue> clears(m_Colors.size() + (m_HasDepth ? 1 : 0));
         for (size_t i = 0; i < m_Colors.size(); ++i) {
             if (m_Colors[i].sampled) {
                 clears[i].color = { { cc.r, cc.g, cc.b, cc.a } };
             }
             else {
-                // 🟢 id 버퍼의 "빈 곳" = -1. 비트패턴이 0xFFFFFFFF라 entt::null과
-                //    정확히 같다(entt::null = construct(entity_mask, version_mask)).
-                //    그래서 P-b에서 읽은 값을 그대로 entt::entity로 되돌리면
-                //    빈 곳 클릭이 자연스럽게 "선택 없음"이 된다.
-                // ⚠️ .float32가 아니라 .int32다. 정수 어태치먼트에 float를 쓰면
-                //    비트가 그대로 들어가 -1이 아닌 쓰레기 값이 clear된다.
+                // "Empty" in the id buffer = -1. Its bit pattern is 0xFFFFFFFF, which is
+                //    exactly entt::null (entt::null = construct(entity_mask, version_mask)).
+                //    So casting the value read in P-b straight back to entt::entity makes
+                //    a click on empty space fall out naturally as "no selection".
+                // WARNING: .int32, not .float32. Using float on an integer attachment puts
+                //    the bits in verbatim, clearing to garbage instead of -1.
                 clears[i].color.int32[0] = -1;
                 clears[i].color.int32[1] = -1;
                 clears[i].color.int32[2] = -1;
@@ -510,8 +510,8 @@ namespace AppWMs {
 
         vkCmdBeginRenderPass(cmd, &rpBegin, VK_SUBPASS_CONTENTS_INLINE);
 
-        // 뷰포트/시저는 동적 상태로 간다 — 파이프라인을 패널 크기마다
-        // 다시 만들지 않기 위해서. 3단계에서 DYNAMIC_STATE로 선언한다.
+        // Viewport/scissor go in as dynamic state, so the pipeline is not rebuilt for
+        // every panel size. Step 3 declares them as DYNAMIC_STATE.
         VkViewport viewport{ 0.0f, 0.0f, (float)m_Spec.w, (float)m_Spec.h, 0.0f, 1.0f };
         VkRect2D   scissor{ { 0, 0 }, { m_Spec.w, m_Spec.h } };
         vkCmdSetViewport(cmd, 0, 1, &viewport);
@@ -521,30 +521,30 @@ namespace AppWMs {
     void VulkanRenderTarget::endPass() {
         VkCommandBuffer cmd = VulkanContext::Get()->getCurrentCommandBuffer();
         vkCmdEndRenderPass(cmd);
-        // ⚠️ 반드시 EndRenderPass 뒤다 — 전송 명령은 렌더패스 안에서 못 쓴다.
-        //    그리고 이 자리에선 id 이미지가 이미 TRANSFER_SRC_OPTIMAL이다.
+        // WARNING: this must come after EndRenderPass -- transfer commands cannot be used inside a render pass.
+        //    And at this point the id image is already in TRANSFER_SRC_OPTIMAL.
         harvestAndRecordPixelRead(cmd);
     }
 
     void VulkanRenderTarget::resize(uint32_t w, uint32_t h) {
         if (w == 0 || h == 0) return;
-        if (w == m_Spec.w && h == m_Spec.h) return;  // 매 프레임 호출되므로 같은 크기는 무시
+        if (w == m_Spec.w && h == m_Spec.h) return;  // called every frame, so ignore an unchanged size
 
         m_Spec.w = w;
         m_Spec.h = h;
 
-        // ③ 결정 A안 — GPU가 옛 이미지를 다 쓸 때까지 기다린 뒤 파괴한다.
-        // OpenGL은 드라이버가 지연 삭제를 대신 해줬지만 벌칸은 앱 책임.
+        // Decision #3, option A -- wait until the GPU is done with the old images, then destroy.
+        // On OpenGL the driver deferred the delete for us; on Vulkan it is the app's job.
         vkDeviceWaitIdle(VulkanContext::Get()->getDevice());
 
-        // 진행 중이던 픽셀 읽기는 버린다. waitIdle 뒤라 복사 자체는 끝났지만,
-        // 그 좌표는 **옛 크기 기준**이라 지금 화면과 대응이 안 된다.
-        // (스테이징 버퍼 자체는 4B라 크기와 무관 → 재생성하지 않는다)
+        // Any pixel read in flight is dropped. After waitIdle the copy itself is done, but
+        // its coordinates are in terms of the *old* size and no longer map to what is on screen.
+        // (the staging buffer itself is 4B, size-independent -> not recreated)
         for (Readback& rb : m_Readbacks) rb.pending = false;
         m_PendingReadAttachment = -1;
         m_HasResult = false;
 
         cleanup();
-        invalidate();  // ② 운용 규칙: 렌더패스는 유지 (크기와 무관)
+        invalidate();  // decision #2 operating rule: keep the render pass (it is size-independent)
     }
 }

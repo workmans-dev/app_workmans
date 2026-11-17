@@ -10,27 +10,27 @@ namespace AppWMs {
 		Entity(const entt::entity& entityHandle, Scene* scene);
 		Entity(const Entity& other);
 		Entity()=default;
-		// ⚠️ 데이터 멤버가 없는 태그 컴포넌트(CubeComponent 등)는 entt가 실제로
-		//    저장하지 않는다(empty-type 최적화 → 엔티티당 0바이트). 저장할 실체가
-		//    없으니 emplace가 참조가 아니라 void를 반환한다.
-		//    그래서 반환 타입을 갈라야 한다:
-		//      태그    → void  (돌려줄 참조 자체가 존재하지 않음)
-		//      일반    → T&
-		//    if constexpr이라 T마다 한쪽 가지만 인스턴스화되고, decltype(auto)가
-		//    그에 맞는 반환 타입을 잡는다.
+		// WARNING: a tag component with no data members (CubeComponent and the like) is not
+		//    actually stored by entt (empty-type optimization -> 0 bytes per entity). With no
+		//    object to store, emplace returns void rather than a reference.
+		//    So the return type has to branch:
+		//      tag     -> void  (there is no reference to hand back)
+		//      regular -> T&
+		//    Being if constexpr, only one branch is instantiated per T, and decltype(auto)
+		//    picks up the matching return type.
 		template <typename T, typename... Args>
 		decltype(auto) addComponent(Args&&... args) {
 			if constexpr (std::is_empty_v<T>) {
 				pm_scene->pm_register.emplace<T>(pm_entityHandle, std::forward<Args>(args)...);
-				// 훅에 넘길 실체가 없으므로 임시로 하나 만든다. 저장되지 않는 값이라
-				// 여기에 무언가를 쓰면 사라진다 — 태그용 훅은 비워두는 게 맞다.
+				// There is no object to hand to the hook, so a temporary one is made. It is a value
+				// that never gets stored, so anything written here is lost -- a tag hook should stay empty.
 				T tag{};
 				pm_scene->componentAdded<T>(*this, tag);
 			}
 			else {
 				T& comp = pm_scene->pm_register.emplace<T>(pm_entityHandle, std::forward<Args>(args)...);
 				pm_scene->componentAdded<T>(*this, comp);
-				return (comp);   // 괄호 필수 — decltype(auto)가 T&로 잡히게 한다
+				return (comp);   // parentheses are required -- they make decltype(auto) resolve to T&
 			}
 		}
 

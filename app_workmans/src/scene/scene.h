@@ -16,32 +16,32 @@ namespace AppWMs {
 	public:
 		Scene();
 		~Scene();
-		// ── 엔티티를 만드는 두 갈래 ───────────────────────────────────────
+		// -- The two ways to make an entity --------------------------------
 		//
-		// ⚠️ "이게 무슨 종류인가"를 TagComponent의 enum 같은 걸로 들지 않는다.
-		//    ECS에선 **어떤 컴포넌트를 갖고 있는가**가 그 질문의 답이다.
-		//    enum으로 들면 모든 순회에 if (type == ...) 분기가 붙어 연속 순회의
-		//    이점이 사라진다 — 형상을 mesh/curve/nurbs로 나눈 것과 같은 논리다.
+		// WARNING: "what kind is this" is not held as an enum on TagComponent or anything like it.
+		//    In an ECS, *which components it has* is the answer to that question.
+		//    Holding it as an enum puts an if (type == ...) branch in every traversal and loses
+		//    the contiguous-iteration benefit -- same logic as splitting shapes into mesh/curve/nurbs.
 		//
-		// createEntity : 순수 할당. 이름만 붙는다.
-		//                위치가 없는 것들 — 모디파이어(미러/스킨), 디포머 같은
-		//                "계산하는" 엔티티가 여기로 온다. transform이 없으니
-		//                view<TransformComponent>가 알아서 걸러낸다.
+		// createEntity : pure allocation. It only gets a name.
+		//                The things with no position -- modifiers (mirror/skin), deformers,
+		//                the "computing" entities -- come here. With no transform,
+		//                view<TransformComponent> filters them out by itself.
 		//
-		// createObject : 씬 오브젝트. 공간에 위치가 있고 화면에 나온다.
-		//                Transform + WorldTransform + Vis 를 얹는다.
+		// createObject : a scene object. It has a position in space and shows up on screen.
+		//                Transform + WorldTransform + Vis are added.
 		//
-		// 마야는 DAG 노드(위치 있음) / DG 노드(계산)로, 블렌더는 Object / Modifier로
-		// 같은 선을 긋는다. 둘 다 "위치가 있느냐"가 기준이다.
+		// Maya draws the same line with DAG nodes (positioned) vs DG nodes (computing), Blender
+		// with Object vs Modifier. For both, the criterion is "does it have a position".
 		Entity createEntity(const std::string& name = std::string());
 		Entity createObject(const std::string& name = std::string());
-		// ⚠️ 마야 방식 — 서브트리를 통째로 지운다. 부모를 지우면 자손도 사라진다.
-		//    예외는 기본 카메라(perspective/top/front/side)뿐이다. 아래 구현 주석 참고.
+		// WARNING: the Maya way -- it deletes the whole subtree. Delete a parent and the descendants go too.
+		//    The only exception is the default cameras (perspective/top/front/side). See the implementation comment.
 		void deletEntity( Entity& entity);
 		const entt::registry& get_reg() { return pm_register; }
-		// 이 핸들이 아직 살아 있나. 서브트리 삭제(마야 방식) 때문에 내가 안 지운
-		// 엔티티도 사라질 수 있다 — 부모를 지우면 자손이 함께 죽는다.
-		// 그래서 Entity를 목록으로 들고 있는 쪽(선택 목록 등)은 이걸로 걸러야 한다.
+		// Is this handle still alive? Because of subtree deletion (the Maya way), an entity
+		// I never deleted can disappear -- deleting a parent kills its descendants with it.
+		// So anything holding a list of Entity (a selection list, say) has to filter through this.
 		bool isValid(const Entity& e) const;
 		void onUpdate(Timer ts);
 		void event(Event& e);
@@ -56,51 +56,51 @@ namespace AppWMs {
 		std::vector<Entity>& get_camEntities() { return pm_cam_entities; }
 
 	public:
-		// ── 계층 ───────────────────────────────────────────────────────────
+		// -- Hierarchy -----------------------------------------------------
 		//
-		// 월드 행렬을 프레임당 한 번 루트→자손 순으로 채운다.
-		// onUpdate 최상단에서 부른다. 이 호출 뒤로는 WorldTransformComponent가
-		// 이번 프레임의 진실이다.
+		// Fills the world matrices once per frame, root down to descendants.
+		// Called at the very top of onUpdate. After this call, WorldTransformComponent is
+		// the truth for this frame.
 		//
-		// 왜 조회 시점 lazy 계산이 아니라 top-down 1회인가:
-		// lazy는 조회마다 부모 체인을 depth만큼 거슬러 올라간다. 본이 깊어지면
-		// 엔티티 하나 읽는 데 depth번 재귀가 붙는다. top-down은 정확히 O(N)이고
-		// 부모의 월드가 이미 손에 있는 상태로 자식에 내려가므로 재방문이 없다.
+		// Why one top-down pass rather than lazy evaluation at query time:
+		// lazy walks up the parent chain by the full depth on every query. As bones get deeper,
+		// reading one entity costs depth recursions. Top-down is exactly O(N), and it descends
+		// to children with the parent's world already in hand, so nothing is revisited.
 		void updateTransforms();
 
-		// child를 parent 밑으로 옮긴다. parent가 빈 Entity면 루트로 뺀다.
+		// Moves child under parent. If parent is an empty Entity, child is pulled out to the root.
 		//
-		// keepWorldTransform=true면 화면상 위치가 그대로 유지되도록 child의 로컬을
-		// 보정한다 (마야 parent / 블렌더 Ctrl+P의 관례). false면 로컬을 그대로 두어
-		// 부모 변환만큼 튄다.
+		// With keepWorldTransform=true the child's local is corrected so its on-screen position
+		// stays put (the convention of Maya parent / Blender Ctrl+P). With false the local is left
+		// alone and it jumps by the parent transform.
 		//
-		// 실패(자기 자신 / 자손을 부모로 지정 = 순환)하면 false를 돌려주고
-		// 아무것도 바꾸지 않는다.
+		// On failure (itself, or a descendant given as the parent = a cycle) it returns false and
+		// changes nothing.
 		bool setParent(Entity child, Entity parent, bool keepWorldTransform = true);
 		void removeParent(Entity child, bool keepWorldTransform = true);
-		// 부모가 없으면 빈 Entity(operator bool == false)를 돌려준다.
+		// Returns an empty Entity (operator bool == false) when there is no parent.
 		Entity getParent(Entity child);
-		// 자식 목록. 계층에 안 엮인 엔티티면 nullptr.
-		// ⚠️ 돌려주는 포인터는 setParent/삭제가 벡터를 건드리면 죽는다.
-		//    순회 중에 계층을 바꿀 거면 복사본을 떠서 돌 것.
+		// The child list. nullptr when the entity is not wired into the hierarchy.
+		// WARNING: the returned pointer dies if setParent or a deletion touches the vector.
+		//    If the hierarchy will change mid-traversal, take a copy and walk that.
 		const std::vector<entt::entity>* getChildren(Entity e) const;
-		// updateTransforms()가 이번 프레임에 채운 값. 로컬을 원하면
-		// TransformComponent::getLocalMatrix()를 직접 쓴다.
+		// The value updateTransforms() filled in this frame. For the local, use
+		// TransformComponent::getLocalMatrix() directly.
 		const glm::mat4& getWorldMatrix(Entity e);
 
-		// 월드 행렬을 직접 지정한다. 부모 밑에서 그 월드가 나오도록 로컬을 역산해 넣는다.
+		// Sets the world matrix directly. It back-solves the local so that world comes out under the parent.
 		//     world = parentWorld × local   →   local = inverse(parentWorld) × world
 		//
-		// 기즈모(월드로 조작)와 setParent(붙여도 안 움직이게 보정)가 같은 식을 쓴다.
-		// 두 곳에 각자 적으면 한쪽만 고쳤을 때 "기즈모는 맞는데 부모지정만 튀는"
-		// 식으로 갈라지므로 여기 하나만 둔다.
+		// The gizmo (which manipulates in world) and setParent (which corrects so nothing moves) share this formula.
+		// Writing it in both places would diverge the moment only one gets fixed -- "the gizmo is right
+		// but parenting jumps" -- so it lives here alone.
 		void setWorldMatrix(Entity e, const glm::mat4& world);
 
 	private:
 		// entt::entity : enum class
 		entt::registry pm_register;
-		// ⚠️ 지오메트리는 씬이 공유본으로 들지 않는다. 엔티티마다 MeshComponent가
-		//    자기 것을 소유해야 두 오브젝트를 따로 편집할 수 있다.
+		// WARNING: the scene does not hold geometry as a shared copy. Each entity's MeshComponent
+		//    must own its own for two objects to be editable separately.
 		Ref<Texture2D> pm_checker_tex_ptr, pm_icon_tex_ptr;
 		
 		const glm::mat4& scale_down = glm::scale(glm::mat4(1.0f), glm::vec3(0.3f));
@@ -122,15 +122,15 @@ namespace AppWMs {
 		void componentAdded(Entity& entity, T& comp);
 
 	private:
-		// 계층 내부 구현. Entity가 아니라 entt::entity를 받는 이유 —
-		// 재귀 중에 registry를 건드리므로 얇은 핸들 하나만 들고 도는 게 안전하다.
+		// Hierarchy internals. Why these take entt::entity rather than Entity --
+		// the recursion touches the registry, so carrying one thin handle around is safer.
 		void updateWorldTransform(entt::entity e, const glm::mat4* parentWorld, uint32_t parentVersion);
 		void destroySubtree(entt::entity e);
 		void detachFromParent(entt::entity e);
 		void removeFromCameraLists(entt::entity e);
 		bool isDescendantOf(entt::entity maybeDescendant, entt::entity ancestor) const;
-		// 공간에 있는 엔티티인가(= createObject로 만들어졌나).
-		// 위치 없는 엔티티에 트랜스폼 연산을 걸면 그대로 터지므로 그 앞을 막는다.
+		// Is this an entity in space (= was it made with createObject)?
+		// Running a transform operation on a position-less entity blows up, so this guards the front.
 		bool isSpatial(entt::entity e) const;
 
 

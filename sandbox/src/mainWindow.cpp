@@ -11,8 +11,8 @@
 #include "dataHandler/fileHandler/fileDialog.h"
 
 #include "renderer/geometry/cube.h"
-#include "vulkan/vk_renderTarget.h"   // getRenderPass() 다운캐스팅용
-#include "vulkan/vulkanContext.h"     // 현재 커맨드버퍼 대여
+#include "vulkan/vk_renderTarget.h"   // for the getRenderPass() downcast
+#include "vulkan/vulkanContext.h"     // borrows the current command buffer
 
 
 #include "ImGuizmo/ImGuizmo.h"
@@ -79,9 +79,9 @@ namespace AppWMs {
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				// 라벨을 하드코딩하지 않는다 — keymap.yaml에서 키를 바꾸면 메뉴 표시도 같이 바뀐다.
-				// 선언적 파일을 고른 이유가 이것이다: 스크립트였으면 "현재 단축키가 뭔지"를
-				// 알아내려고 코드를 실행해야 해서 이 표시가 불가능하다.
+				// The label is not hardcoded -- change a key in keymap.yaml and the menu display changes with it.
+				// This is why a declarative file was chosen: with a script, "what is the current shortcut"
+				// would require running code, which makes this display impossible.
 				ImGui::Separator();
 				if (ImGui::MenuItem("New Scene", KeyMap::label("file.newScene"), false, dockSpace_open != NULL)) {
 					newScene();
@@ -112,8 +112,8 @@ namespace AppWMs {
 					}
 					if (ImGui::BeginMenu("Polygon")) {
 						if (ImGui::MenuItem("Cube", NULL, false, dockSpace_open != NULL)) {
-							// 프리미티브는 뷰포트에 드러나는 물건이므로 오브젝트다.
-							// (모디파이어처럼 위치 없는 것은 createEntity 쪽으로 간다)
+							// A primitive is a thing that shows up in the viewport, so it is an object.
+							// (Position-less things such as modifiers go through createEntity instead)
 							Entity entt = pm_scene->createObject("Cube");
 							entt.addComponent<MeshComponent>(Cube::create());
 						}
@@ -148,39 +148,39 @@ namespace AppWMs {
 		const ImVec2& resized_viewportSize = ImGui::GetContentRegionAvail();
 		pm_viewportSize = { resized_viewportSize.x, resized_viewportSize.y };
 		
-		// onUpdate에서 이미 오프스크린 FB에 기록이 끝났다 (App::run 순서: onUpdate → onImGuiRender).
-		// getColorTextureID()의 실체는 VkDescriptorSet, ImTextureID(=ImU64)와 폭이 같다.
+		// onUpdate already finished recording into the offscreen FB (App::run order: onUpdate -> onImGuiRender).
+		// getColorTextureID() is really a VkDescriptorSet, the same width as ImTextureID (= ImU64).
 		ImGui::Image((ImTextureID)pm_viewportTarget->getColorTextureID(),
 			ImVec2{ pm_viewportSize.x, pm_viewportSize.y });
 
-		// ⚠️ IsItemHovered는 Image() 바로 뒤여야 한다 — 다른 아이템을 그리면
-		//    "마지막 아이템"이 그쪽으로 넘어간다 (아웃라이너 트리와 같은 함정).
+		// WARNING: IsItemHovered has to come right after Image() -- drawing another item moves
+		//    "the last item" over to that one (the same trap as the outliner tree).
 		const bool imageHovered = ImGui::IsItemHovered();
 
-		// ⭐️ 방금 그린 이미지가 화면에서 차지한 실제 사각형.
-		//    툴바 높이를 상수로 빼는 대신 여기서 읽으면 패딩·툴바가 바뀌어도 안 어긋난다.
+		// The actual rectangle the image just drawn occupies on screen.
+		//    Reading it here rather than hardcoding the toolbar height keeps it correct when padding or the toolbar changes.
 		const ImVec2 imageMin = ImGui::GetItemRectMin();
 		const ImVec2 imageMax = ImGui::GetItemRectMax();
 
-		// 기즈모가 붙는 대상 = 마지막에 고른 것. 아래 ImGuizmo 블록과 같은 조건이라
-		// 여기서 한 번 구해 둘이 공유한다.
+		// What the gizmo attaches to = the one picked last. It is the same condition as the ImGuizmo
+		// block below, so it is computed once here and shared by both.
 		Entity* activeEntity = pm_sceneProperties_panel.get_activeEntity();
 		const bool gizmoDrawn = (activeEntity && pm_manipulatorType != -1);
 
-		// ── P-b 피킹 요청 ────────────────────────────────────────────────────
-		// 화면 좌표 → 이미지 좌상단 기준 텍셀. 이미지를 1:1 크기로 그리므로
-		// (resize가 패널 크기를 그대로 따라간다) 배율 보정이 필요 없다.
+		// -- P-b picking request ---------------------------------------------
+		// Screen coordinates -> texel relative to the image's top-left. The image is drawn at 1:1
+		// (resize follows the panel size directly), so no scale correction is needed.
 		//
-		// ⚠️ 기즈모 위에서는 안 잡는다. 축을 끌려고 누른 것을 선택으로 오해하면
-		//    조작 중에 대상이 바뀐다.
-		// ⚠️ 단, **기즈모가 실제로 그려질 때만** 물어본다. ImGuizmo::IsOver()는
-		//    지난 프레임 Manipulate()가 gContext에 남긴 행렬로 교차를 계산하는데,
-		//    선택이 없으면 Manipulate가 한 번도 안 불려 그 행렬이 0이다.
-		//    그대로 물어보면 엉뚱하게 참이 나와 **첫 클릭이 삼켜질 수 있다.**
-		// ⚠️ 카메라 조작 중에는 안 잡는다. camera.modifier(기본 LeftAlt) + 좌클릭은
-		//    이미 tumble이라, 궤도를 돌리려고 누른 것을 선택으로 받으면
-		//    마우스를 누르는 순간 선택이 통째로 날아간다.
-		//    키를 하드코딩하지 않는다 — keymap.yaml이 정한 그 키를 그대로 본다.
+		// WARNING: nothing is picked over the gizmo. Mistaking a press meant to drag an axis for a
+		//    selection would change the target mid-manipulation.
+		// WARNING: but ask only *when the gizmo is actually drawn*. ImGuizmo::IsOver() computes the
+		//    intersection from the matrix last frame's Manipulate() left in gContext, and with no
+		//    selection Manipulate was never called, so that matrix is zero.
+		//    Asking anyway can come back true spuriously and *swallow the first click*.
+		// WARNING: nothing is picked during camera manipulation. camera.modifier (LeftAlt by default)
+		//    + left click is already tumble, so taking a press meant to orbit as a selection would
+		//    wipe the whole selection the moment the mouse goes down.
+		//    The key is not hardcoded -- it reads whatever key keymap.yaml set.
 		const bool cameraDragging = KeyMap::isHeld("camera.modifier");
 
 		if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
@@ -190,14 +190,14 @@ namespace AppWMs {
 			const int px = (int)(mouse.x - imageMin.x);
 			const int py = (int)(mouse.y - imageMin.y);
 			if (px >= 0 && py >= 0) {
-				// 조합키는 **지금** 읽어둔다 — 결과는 몇 프레임 뒤에 온다.
+				// The modifiers are read *now* -- the result arrives a few frames later.
 				pm_pendingPickMode = SceneProperties::selectModeFromMods();
-				// 어태치먼트 1번 = id 버퍼 (onAttach의 나열 순서)
+				// Attachment 1 = the id buffer (the order listed in onAttach)
 				pm_viewportTarget->requestPixelRead(1, (uint32_t)px, (uint32_t)py);
 			}
 		}
 
-		// ImGuizmo  (activeEntity / gizmoDrawn은 위 피킹 블록에서 이미 구했다)
+		// ImGuizmo  (activeEntity / gizmoDrawn were already computed in the picking block above)
 		if (gizmoDrawn) {
 			// primary cam_entity
 			auto* camEntity_primary = pm_scene->get_camera_primary();
@@ -206,35 +206,35 @@ namespace AppWMs {
 			ImGuizmo::SetOrthographic(
 				sceneCam.get_camProjType() == SceneCamera::CameraProjType::orthographic);
 
-			// ⚠️ 기본값이 true라 카메라를 돌리면 축 화살표가 제멋대로 뒤집힌다.
-			//    ImGuizmo가 +축/−축의 화면 투영 길이를 비교해(ImGuizmo.cpp:1202)
-			//    카메라를 더 마주보는 쪽으로 돌려놓는 "가시성 개선" 기능인데,
-			//    DCC에선 축 방향이 고정이어야 조작 방향을 예측할 수 있다.
-			//    마야 매니퓰레이터도 항상 양의 축에 고정이다.
+			// WARNING: the default is true, which makes the axis arrows flip around as the camera moves.
+			//    ImGuizmo compares the screen-projected length of the + and - axes (ImGuizmo.cpp:1202)
+			//    and turns whichever faces the camera more -- a "visibility improvement" feature, but
+			//    in a DCC the axis direction must be fixed for the manipulation direction to be predictable.
+			//    Maya's manipulator is also always pinned to the positive axes.
 			ImGuizmo::AllowAxisFlip(false);
 
 			ImGuizmo::SetDrawlist();
 
-			// 기즈모 좌표계를 3D 이미지 영역에 정확히 맞춘다
+			// Fits the gizmo coordinate space exactly to the 3D image area
 			ImGuizmo::SetRect(imageMin.x, imageMin.y,
 				imageMax.x - imageMin.x, imageMax.y - imageMin.y);
 
-			// ⚠️ 여기는 원본(OpenGL NDC)이다. 렌더가 쓰는 get_projection_vk()를 주면
-			//    ImGuizmo가 자체 Y 뒤집기(ImGuizmo.cpp:819)를 또 해서 방향이 반대가 된다.
+			// WARNING: this is the original (OpenGL NDC). Handing it the get_projection_vk() that
+			//    rendering uses makes ImGuizmo apply its own Y flip (ImGuizmo.cpp:819) again and reverse the direction.
 			const glm::mat4& cam_proj = sceneCam.get_projection();
-			// 뷰는 카메라의 **월드** 역행렬이다. Scene::onUpdate의 렌더 경로와 같은 값을
-			// 써야 기즈모가 화면에 그려진 위치와 어긋나지 않는다.
-			// (onImGuiRender는 onUpdate 뒤라 updateTransforms()가 이미 돌았다)
+			// The view is the inverse of the camera's *world*. It has to be the same value as the render
+			// path in Scene::onUpdate, or the gizmo will not line up with where things are drawn.
+			// (onImGuiRender comes after onUpdate, so updateTransforms() has already run)
 			glm::mat4 cam_transform = glm::inverse(pm_scene->getWorldMatrix(*camEntity_primary));
 
-			// 기즈모가 붙는 대상 = **마지막에 고른 것**. 마야 매니퓰레이터와 같은 규칙이고,
-			// Property editor가 보여주는 대상과도 일치한다.
+			// What the gizmo attaches to = *the one picked last*. The same rule as Maya's manipulator,
+			// and it matches what the Property editor shows.
 			Entity& selectedEntity = *activeEntity;
 
-			// ⚠️ 기즈모는 **월드 공간**에서 그린다 — view/proj를 받아 이 행렬을 그대로
-			//    화면에 투영한다. 로컬을 주면 부모가 있는 오브젝트의 기즈모가 물체에서
-			//    떨어진 엉뚱한 자리에 그려지고, 끌면 부모 변환만큼 튄다.
-			//    (부모가 없는 오브젝트에선 둘이 같아서 이 버그가 안 보인다)
+			// WARNING: the gizmo is drawn in *world space* -- it takes view/proj and projects this
+			//    matrix to the screen as is. Handing it the local would draw the gizmo of a parented
+			//    object somewhere away from the object, and dragging would jump by the parent transform.
+			//    (On an object with no parent the two are identical, so the bug stays invisible)
 			glm::mat4 transform = pm_scene->getWorldMatrix(selectedEntity);
 
 			ImGuizmo::Manipulate(glm::value_ptr(cam_transform), glm::value_ptr(cam_proj),
@@ -242,8 +242,8 @@ namespace AppWMs {
 
 
 			if (ImGuizmo::IsUsing()) {
-				// 돌려받은 건 **새 월드**다. 부모 밑에서 그 월드가 나오도록 로컬을
-				// 역산해 넣는 건 Scene이 한다 — setParent와 같은 식을 공유한다.
+				// What comes back is the *new world*. Scene is what back-solves the local so that world
+				// comes out under the parent -- it shares the same formula as setParent.
 				pm_scene->setWorldMatrix(selectedEntity, transform);
 			}
 
@@ -257,40 +257,40 @@ namespace AppWMs {
 
 	void MainWindow::onAttach() {
 
-		// 단축키는 코드가 아니라 파일이 정한다. 경로는 실행 디렉토리 기준이고,
-		// 셰이더(assets/shaders)와 같은 규칙이다. 파일이 없으면 내장 기본값으로 뜬다.
+		// The shortcuts are decided by a file, not by the code. The path is relative to the working
+		// directory, the same rule as the shaders (assets/shaders). With no file it starts on the defaults.
 		KeyMap::load("assets/config/keymap.yaml");
 
-		// ⚠️ 이 시점엔 App::App()이 이미 끝나 ImGui 벌칸 백엔드가 올라와 있다.
-		//    (Sandbox 본문의 pushLayer는 기반 클래스 생성자 이후) → AddTexture 호출 안전.
+		// WARNING: by this point App::App() has finished and the ImGui Vulkan backend is up.
+		//    (the pushLayer in Sandbox's body comes after the base class constructor) -> AddTexture is safe.
 		RenderTargetSpec targetSpec;
 		targetSpec.w = (uint32_t)pm_viewportSize.x;
 		targetSpec.h = (uint32_t)pm_viewportSize.y;
-		// 나열 순서 = 어태치먼트 슬롯 = cube.frag의 out location.
-		// 슬롯 1(R32SINT)이 피킹용 엔티티 id 버퍼다.
+		// The order listed = attachment slot = the out location in cube.frag.
+		// Slot 1 (R32SINT) is the entity id buffer used for picking.
 		targetSpec.attachments = { AttachmentFormat::RGBA8,
 								   AttachmentFormat::R32SINT,
 								   AttachmentFormat::Depth };
 
 		pm_viewportTarget = RenderTarget::create(targetSpec);
 
-		// ⚠️ 순서 강제 — 파이프라인은 FB의 렌더패스를 대상으로 삼으므로 FB보다 뒤여야 한다.
-		// 정점 데이터(VertexArray)는 Scene이 소유하고, 여기선 레이아웃만 필요하다.
+		// WARNING: forced order -- the pipeline targets the FB's render pass, so it comes after the FB.
+		// The vertex data (VertexArray) is owned by Scene; only the layout is needed here.
 		PipelineSpec pipeSpec;
 		pipeSpec.vertPath = "assets/shaders/cube.vert.spv";
 		pipeSpec.fragPath = "assets/shaders/cube.frag.spv";
 		pipeSpec.renderPass =
 			static_cast<VulkanRenderTarget*>(pm_viewportTarget.get())->getRenderPass();
 		pipeSpec.vertexLayout = Cube::layout();
-		// cube.vert의 u_MVP + u_Model + u_EntityID
+		// u_MVP + u_Model + u_EntityID from cube.vert
 		pipeSpec.pushConstantSize = sizeof(glm::mat4) * 2 + sizeof(int32_t);
-		// ⚠️ u_EntityID는 frag가 읽는다 — VERTEX만 켜두면 validation이 잡는다.
+		// WARNING: u_EntityID is read by the frag -- leaving only VERTEX on gets caught by validation.
 		pipeSpec.pushConstantStages =
 			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		// ⚠️ subpass의 colorAttachmentCount와 반드시 같아야 한다 (id 버퍼가 붙어 2개).
+		// WARNING: must equal the subpass colorAttachmentCount (2, with the id buffer attached).
 		pipeSpec.colorAttachmentCount =
 			static_cast<VulkanRenderTarget*>(pm_viewportTarget.get())->getColorAttachmentCount();
-		// cullMode/frontFace는 PipelineSpec 기본값(BACK + CCW)을 쓴다. 근거는 그쪽 주석 참고.
+		// cullMode/frontFace use the PipelineSpec defaults (BACK + CCW). See the comments there for why.
 
 		pm_cubePipeline = std::make_unique<VulkanPipeline>(pipeSpec);
 
@@ -304,8 +304,8 @@ namespace AppWMs {
 	{
 		APP_WMS_PROFILE_FUNC();
 
-		// 패널 크기는 onImGuiRender(setViewport)에서 갱신되므로 여기선 한 프레임 뒤처진 값이다.
-		// 같은 크기면 resize() 내부에서 무시되므로 매 프레임 불러도 된다.
+		// The panel size is refreshed in onImGuiRender (setViewport), so here it is one frame behind.
+		// An unchanged size is ignored inside resize(), so calling it every frame is fine.
 		if (pm_viewportSize.x > 0.0f && pm_viewportSize.y > 0.0f) {
 			pm_viewportTarget->resize((uint32_t)pm_viewportSize.x, (uint32_t)pm_viewportSize.y);
 			pm_scene->resizeView((uint32_t)pm_viewportSize.x, (uint32_t)pm_viewportSize.y);
@@ -313,29 +313,29 @@ namespace AppWMs {
 
 		{
 			SCOPE_PROFILE_TIMER("Rendering on update");
-			// ⚠️ 순서 주의 — 벌칸은 bind()의 vkCmdBeginRenderPass가 loadOp=CLEAR로 지우고,
-			//    그때 clearValue를 읽는다. 따라서 setClearColor가 bind()보다 먼저여야 한다.
-			//    (OpenGL은 bind 후 glClear라 순서가 반대였음)
+			// WARNING: mind the order -- on Vulkan the vkCmdBeginRenderPass in bind() clears with
+			//    loadOp=CLEAR and reads clearValue right then. So setClearColor has to come before bind().
+			//    (On OpenGL it was glClear after bind, so the order was the other way round)
 			RendererCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
-			RendererCommand::clear();   // 벌칸에선 no-op
+			RendererCommand::clear();   // a no-op on Vulkan
 
 			VkCommandBuffer cmd = VulkanContext::Get()->getCurrentCommandBuffer();
 
 			pm_viewportTarget->beginPass();
-			// 파이프라인 1개뿐이라 렌더패스 개시 직후 한 번 바인딩한다.
-			// 파이프라인이 늘면 여기가 아니라 드로우 정렬 루프로 옮겨간다 (④ C안의 목적).
+			// With only one pipeline, it is bound once right after the render pass opens.
+			// As pipelines grow this moves out of here into a draw sorting loop (the purpose of decision #4 C).
 			pm_cubePipeline->bind(cmd);
 
-			// 드로우는 Scene::onUpdate가 카메라 행렬과 함께 Renderer::submit으로 낸다.
+			// The draws are issued by Scene::onUpdate through Renderer::submit, with the camera matrices.
 			pm_scene->onUpdate(time);
 			pm_viewportTarget->endPass();
 
-			// ── P-c — 익은 피킹 결과를 선택에 반영한다.
-			//    요청(onImGuiRender)과 몇 프레임 떨어져 나오는 게 정상이다.
+			// -- P-c -- applies a ripened picking result to the selection.
+			//    Coming out a few frames after the request (onImGuiRender) is normal.
 			//
-			// 🟢 -1은 그대로 entt::null이 된다 (id 버퍼의 clear 값이 전 비트 1이고
-			//    entt::null도 전 비트 1이라 변환이 공짜다) → 빈 곳 클릭이 그대로
-			//    "선택 없음"으로 흘러간다.
+			// -1 becomes entt::null as is (the id buffer's clear value is all bits 1 and
+			//    entt::null is all bits 1 too, so the conversion is free) -> a click on empty
+			//    space flows straight through as "no selection".
 			int32_t picked = -1;
 			if (pm_viewportTarget->pollPixelRead(picked)) {
 				pm_sceneProperties_panel.applyPickSelection(
@@ -484,18 +484,18 @@ namespace AppWMs {
 		if (keyEvent.getRepeatCount() > 0) {
 			return false;
 		}
-		// switch(키코드) + 조합키 손검사에서 액션 조회로 바꿨다.
-		// 어떤 키인지는 여기 없다 — keymap.yaml이 정한다.
+		// Changed from switch(keycode) + hand-checking modifiers to an action lookup.
+		// Which key it is is not here -- keymap.yaml decides.
 		//
-		// ⚠️ KeyMap::isAction은 조합키가 **정확히 일치**할 때만 참이다.
-		//    그래서 S와 Ctrl+Shift+S가 서로를 잡아먹지 않는다.
+		// WARNING: KeyMap::isAction is true only when the modifiers match *exactly*.
+		//    That is why S and Ctrl+Shift+S do not swallow each other.
 		const int key = keyEvent.getKeyCode();
 
 		if (KeyMap::isAction("file.newScene", key))          newScene();
 		else if (KeyMap::isAction("file.openScene", key))    openScene();
 		else if (KeyMap::isAction("file.saveAsScene", key))  saveAsScene();
 		else if (KeyMap::isAction("app.exit", key)) {
-			// 메뉴가 예전부터 Ctrl+Q를 표시했는데 실제 처리는 없었다. 표시와 동작을 맞춘다.
+			// The menu had long shown Ctrl+Q with no actual handling. This makes display and behavior agree.
 			dockSpace_open = false;
 			App::getApp().close();
 		}
@@ -503,9 +503,9 @@ namespace AppWMs {
 		else if (KeyMap::isAction("gizmo.translate", key))   pm_manipulatorType = ImGuizmo::OPERATION::TRANSLATE;
 		else if (KeyMap::isAction("gizmo.rotate", key))      pm_manipulatorType = ImGuizmo::OPERATION::ROTATE;
 		else if (KeyMap::isAction("gizmo.scale", key))       pm_manipulatorType = ImGuizmo::OPERATION::SCALE;
-		// 아웃라이너/선택 관련 단축키는 패널이 직접 판단한다 (삭제·가시성, 이후 parent).
-		else if (pm_sceneProperties_panel.onKeyPressed(key)) { /* 패널이 처리했다 */ }
-		else return false;   // 우리 게 아니면 다음 레이어로 흘려보낸다 (예전엔 무조건 true였다)
+		// Outliner/selection shortcuts are judged by the panel itself (delete, visibility, later parent).
+		else if (pm_sceneProperties_panel.onKeyPressed(key)) { /* the panel handled it */ }
+		else return false;   // not ours -> pass it to the next layer (it used to return true unconditionally)
 
 		return true;
 	}

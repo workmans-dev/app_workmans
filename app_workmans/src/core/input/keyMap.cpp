@@ -8,10 +8,10 @@ namespace AppWMs {
 	std::unordered_map<std::string, KeyBinding> KeyMap::s_Bindings;
 
 	// ─────────────────────────────────────────────────────────────
-	//  이름 → 코드 사전
+	//  name -> code dictionary
 	//
-	//  keyCode.h / mouseCode.h의 목록에서 그대로 뽑는다. 목록이 하나이므로
-	//  "enum엔 있는데 YAML에선 못 쓰는 키"가 생길 수 없다.
+	//  Taken straight from the lists in keyCode.h / mouseCode.h. With one list there can be no
+	//  "key that exists in the enum but cannot be used in YAML".
 	// ─────────────────────────────────────────────────────────────
 	static const std::unordered_map<std::string, KeyCode>& keyNameTable()
 	{
@@ -29,7 +29,7 @@ namespace AppWMs {
 		static const std::unordered_map<std::string, MouseCode> table = {
 			WMS_MOUSE_LIST(WMS_MOUSE_NAME_ENTRY)
 #undef WMS_MOUSE_NAME_ENTRY
-			// 사람이 쓰는 별칭. Button0/1/2보다 이쪽이 먼저 떠오른다.
+			// The aliases people actually use. These come to mind before Button0/1/2.
 			{ "MouseLeft",   Mouse::ButtonLeft   },
 			{ "MouseRight",  Mouse::ButtonRight  },
 			{ "MouseMiddle", Mouse::ButtonMiddle },
@@ -38,7 +38,7 @@ namespace AppWMs {
 	}
 
 	// "Ctrl+Shift+S" → mods = Ctrl|Shift, key = S
-	// 마지막 토큰이 키고, 앞의 것들은 전부 조합키다.
+	// The last token is the key; everything before it is a modifier.
 	static bool parseBinding(const std::string& text, KeyBinding& out)
 	{
 		out = KeyBinding{};
@@ -50,7 +50,7 @@ namespace AppWMs {
 		while (true) {
 			const size_t plus = text.find('+', start);
 			std::string token = text.substr(start, plus == std::string::npos ? std::string::npos : plus - start);
-			// 앞뒤 공백 제거 — "Ctrl + N"처럼 써도 받아준다
+			// Trim surrounding whitespace -- "Ctrl + N" is accepted too
 			const size_t b = token.find_first_not_of(" \t");
 			const size_t e = token.find_last_not_of(" \t");
 			if (b != std::string::npos)
@@ -69,7 +69,7 @@ namespace AppWMs {
 			else if (m == "Alt")                 out.mods |= KeyMod::Alt;
 			else if (m == "Super" || m == "Win") out.mods |= KeyMod::Super;
 			else {
-				APP_WMS_CORE_WARN("keymap: 모르는 조합키 '{0}' (바인딩 '{1}')", m, text);
+				APP_WMS_CORE_WARN("keymap: unknown modifier '{0}' (binding '{1}')", m, text);
 				return false;
 			}
 		}
@@ -84,7 +84,7 @@ namespace AppWMs {
 			const auto& keyTable = keyNameTable();
 			auto kt = keyTable.find(keyName);
 			if (kt == keyTable.end()) {
-				APP_WMS_CORE_WARN("keymap: 모르는 키 이름 '{0}' (바인딩 '{1}')", keyName, text);
+				APP_WMS_CORE_WARN("keymap: unknown key name '{0}' (binding '{1}')", keyName, text);
 				return false;
 			}
 			out.code = kt->second;
@@ -96,8 +96,8 @@ namespace AppWMs {
 		return true;
 	}
 
-	// YAML의 중첩을 "그룹.동작"으로 평탄화한다.
-	// 스칼라를 만나면 바인딩, 맵을 만나면 접두사를 이어붙여 한 단계 더 내려간다.
+	// Flattens the YAML nesting into "group.action".
+	// A scalar is a binding; a map appends to the prefix and descends one more level.
 	static void flatten(const YAML::Node& node, const std::string& prefix,
 		std::unordered_map<std::string, KeyBinding>& out)
 	{
@@ -122,8 +122,8 @@ namespace AppWMs {
 
 	void KeyMap::loadDefaults()
 	{
-		// 파일을 못 읽었을 때의 최후 방어선. 여기 값은 assets/config/keymap.yaml의
-		// 기본 내용과 같아야 한다 — 다르면 "파일 지웠더니 키가 바뀌는" 혼란이 생긴다.
+		// The last line of defense when the file cannot be read. The values here have to match the
+		// defaults in assets/config/keymap.yaml -- otherwise you get "I deleted the file and the keys changed".
 		static const std::pair<const char*, const char*> defaults[] = {
 			{ "gizmo.none",        "Q" },
 			{ "gizmo.translate",   "W" },
@@ -133,7 +133,7 @@ namespace AppWMs {
 			{ "file.openScene",    "Ctrl+O" },
 			{ "file.saveAsScene",  "Ctrl+Shift+S" },
 			{ "app.exit",          "Ctrl+Q" },
-			// 선택 — 마야 규약. 조합키 없는 클릭(=교체)은 바인딩이 필요 없다.
+			// Selection -- the Maya convention. A click with no modifier (= replace) needs no binding.
 			{ "select.toggle",     "Shift+MouseLeft" },
 			{ "select.subtract",   "Ctrl+MouseLeft" },
 			{ "select.add",        "Ctrl+Shift+MouseLeft" },
@@ -161,7 +161,7 @@ namespace AppWMs {
 
 		std::ifstream file(filePath);
 		if (!file.is_open()) {
-			APP_WMS_CORE_WARN("keymap: '{0}'을 열 수 없다 — 내장 기본값을 쓴다.", filePath);
+			APP_WMS_CORE_WARN("keymap: cannot open '{0}' - using the built-in defaults.", filePath);
 			loadDefaults();
 			return;
 		}
@@ -173,8 +173,8 @@ namespace AppWMs {
 			flatten(root, "", s_Bindings);
 		}
 		catch (const std::exception& e) {
-			// 오타 하나로 편집기를 못 켜면 안 된다. 경고만 남기고 기본값으로 간다.
-			APP_WMS_CORE_ERROR("keymap: '{0}' 파싱 실패 ({1}) — 내장 기본값을 쓴다.",
+			// One typo must not stop the editor opening. Log a warning and fall back to the defaults.
+			APP_WMS_CORE_ERROR("keymap: failed to parse '{0}' ({1}) - using the built-in defaults.",
 				filePath, e.what());
 			s_Bindings.clear();
 			loadDefaults();
@@ -182,11 +182,11 @@ namespace AppWMs {
 		}
 
 		if (s_Bindings.empty()) {
-			APP_WMS_CORE_WARN("keymap: '{0}'에서 읽은 바인딩이 없다 — 내장 기본값을 쓴다.", filePath);
+			APP_WMS_CORE_WARN("keymap: no bindings read from '{0}' - using the built-in defaults.", filePath);
 			loadDefaults();
 			return;
 		}
-		APP_WMS_CORE_INFO("keymap: '{0}' 로드 — 바인딩 {1}개", filePath, s_Bindings.size());
+		APP_WMS_CORE_INFO("keymap: loaded '{0}' - {1} bindings", filePath, s_Bindings.size());
 	}
 
 	const KeyBinding& KeyMap::get(const std::string& action)
@@ -198,8 +198,8 @@ namespace AppWMs {
 
 	uint8_t KeyMap::currentMods()
 	{
-		// 좌/우를 하나로 합친다. 예전엔 호출부마다
-		// IsKeyPressed(LeftControl) || IsKeyPressed(RightControl)을 손으로 썼다.
+		// Merges left and right into one. Call sites used to hand-write
+		// IsKeyPressed(LeftControl) || IsKeyPressed(RightControl).
 		uint8_t mods = KeyMod::None;
 		if (Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift))
 			mods |= KeyMod::Shift;
@@ -219,8 +219,8 @@ namespace AppWMs {
 			return false;
 		if (binding.code != (uint16_t)keyCode)
 			return false;
-		// ⚠️ 정확히 일치를 요구한다. 부분 일치를 허용하면 P가 Shift+P를 잡아먹어
-		//    unparent가 절대 안 걸린다 — 둘이 같은 키를 쓰는 게 정확히 이 경우다.
+		// WARNING: an exact match is required. Allowing a partial match would let P swallow Shift+P
+		//    so unparent never fires -- and those two sharing a key is exactly this case.
 		return currentMods() == binding.mods;
 	}
 
@@ -236,8 +236,8 @@ namespace AppWMs {
 		if (!down)
 			return false;
 
-		// 조합키를 요구하는 바인딩만 조합키를 검사한다. 조합키가 없는 바인딩은
-		// 다른 키가 같이 눌려 있어도 성립한다(카메라 조작 중 다른 키를 눌러도 안 끊긴다).
+		// Only a binding that requires modifiers checks modifiers. A binding with none holds even
+		// if other keys are down too (pressing another key during camera manipulation does not break it).
 		if (binding.mods == KeyMod::None)
 			return true;
 		return (currentMods() & binding.mods) == binding.mods;

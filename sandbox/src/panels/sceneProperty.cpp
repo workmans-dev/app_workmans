@@ -78,12 +78,12 @@ namespace AppWMs {
 		ImGui::Columns(1);
 		ImGui::PopID();
 	}
-	// 쿼터니언 편집기. DrawVec3와 달리 축 색을 안 쓴다 —
-	// w/x/y/z는 축이 아니라 4차원 성분이라 RGB=XYZ 관례를 붙이면 거짓말이 된다.
+	// Quaternion editor. Unlike DrawVec3 it does not use axis colors --
+	// w/x/y/z are 4D components, not axes, so attaching the RGB=XYZ convention would be a lie.
 	//
-	// ⚠️ 여기서 성분을 직접 드래그하면 길이가 1을 벗어난다. 정규화는
-	//    getLocalMatrix()가 읽는 시점에 하므로(safeNormalizeQuat) 화면은 안 깨지지만,
-	//    표시값과 실제 적용값이 갈릴 수 있다. 정상적인 조작 경로는 기즈모다.
+	// WARNING: dragging a component directly here takes the length away from 1. Normalization
+	//    happens when getLocalMatrix() reads it (safeNormalizeQuat), so the image does not break,
+	//    but the displayed value can diverge from what is applied. The normal path is the gizmo.
 	static void DrawQuat(const std::string& label, glm::quat& q, float columnWidth = 66.0f) {
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[1];
@@ -102,7 +102,7 @@ namespace AppWMs {
 		std::array<float*, 4> values{ &q.w, &q.x, &q.y, &q.z };
 		for (int i = 0; i < 4; ++i) {
 			ImGui::PushFont(boldFont);
-			// 버튼 = 항등 쿼터니언으로 리셋 (W만 1, 나머지 0)
+			// The button resets to the identity quaternion (W is 1, the rest 0)
 			if (ImGui::Button(names[i], buttonSize))
 				q = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 			ImGui::PopFont();
@@ -143,21 +143,21 @@ namespace AppWMs {
 
 	Entity* SceneProperties::get_activeEntity()
 	{
-		// 마지막에 고른 것이 활성이다 (마야 규약).
+		// The one picked last is the active one (the Maya convention).
 		return pm_selectedEntities.empty() ? nullptr : &pm_selectedEntities.back();
 	}
 
-	// 조합키 → 선택 방식. keymap.yaml의 select 그룹이 정한다.
+	// Modifiers -> selection mode. The select group in keymap.yaml decides.
 	//
-	// ⚠️ **정확히 일치**로 본다. 부분 일치면 Ctrl(빼기)이 Ctrl+Shift(추가)를
-	//    먼저 삼켜 추가가 영원히 안 걸린다 — isAction이 같은 이유로 정확히 일치다.
+	// WARNING: judged by an *exact match*. With a partial match, Ctrl (subtract) would swallow
+	//    Ctrl+Shift (add) first and add would never fire -- isAction is exact for the same reason.
 	SelectMode SceneProperties::selectModeFromMods()
 	{
 		const uint8_t mods = KeyMap::currentMods();
 		if (mods == KeyMod::None)
-			return SelectMode::Replace;   // 조합키 없는 클릭은 바인딩이 필요 없다
+			return SelectMode::Replace;   // a click with no modifier needs no binding
 
-		// 순서는 상관없다 — 정확히 일치라 세 값이 서로 겹치지 않는다.
+		// The order does not matter -- with an exact match the three values do not overlap.
 		const KeyBinding& add = KeyMap::get("select.add");
 		if (add.valid && mods == add.mods)       return SelectMode::Add;
 		const KeyBinding& sub = KeyMap::get("select.subtract");
@@ -165,8 +165,8 @@ namespace AppWMs {
 		const KeyBinding& tog = KeyMap::get("select.toggle");
 		if (tog.valid && mods == tog.mods)       return SelectMode::Toggle;
 
-		// 모르는 조합(예: Alt = 카메라 모디파이어)은 교체로 떨어뜨리지 않는다.
-		// 선택을 날려버리는 게 기본값이면 오조작 비용이 너무 크다.
+		// An unknown combination (Alt = the camera modifier, say) does not fall through to replace.
+		// With wiping the selection as the default, the cost of a misclick would be too high.
 		return SelectMode::Toggle;
 	}
 
@@ -182,8 +182,8 @@ namespace AppWMs {
 			return;
 
 		case SelectMode::Add:
-			// 이미 들어 있으면 그대로 둔다 — 뒤로 옮기면 활성 대상이 조용히 바뀌어
-			// parent의 "마지막에 고른 것이 부모" 규칙이 흔들린다.
+			// If it is already in, leave it where it is -- moving it to the back would silently change
+			// the active target and shake parent's "the one picked last is the parent" rule.
 			if (!already) pm_selectedEntities.push_back(e);
 			return;
 
@@ -192,35 +192,35 @@ namespace AppWMs {
 			return;
 
 		case SelectMode::Toggle:
-			break;   // 아래 공통 경로
+			break;   // falls into the common path below
 		}
 
 		if (!already) {
-			// ⚠️ 항상 **뒤에** 붙인다. 이 위치가 곧 선택 순서고,
-			//    마지막 원소가 활성(= parent의 부모)이 된다.
+			// WARNING: always append at the *back*. This position is the selection order, and
+			//    the last element becomes the active one (= parent's parent).
 			pm_selectedEntities.push_back(e);
 		}
 		else {
-			// erase로 앞당겨져도 나머지의 상대 순서는 유지된다.
+			// Even when erase shifts things forward, the relative order of the rest is preserved.
 			pm_selectedEntities.erase(it);
 		}
 	}
 
-	// 뷰포트 피킹(P-b) 결과를 선택에 반영한다. 아웃라이너 클릭과 **같은 함수**를
-	// 통과시키는 게 핵심이다 — 두 경로가 각자 선택 로직을 가지면 규칙이 갈라진다.
+	// Applies the viewport picking (P-b) result to the selection. The key is to run it through
+	// the *same function* as an outliner click -- two paths with their own logic would diverge.
 	void SceneProperties::applyPickSelection(entt::entity handle, SelectMode mode)
 	{
-		// ── 빈 곳 클릭
+		// -- click on empty space
 		if (handle == entt::null) {
-			// 조합키를 쥐고 빈 곳을 눌렀으면 아무 일도 안 한다.
-			// 복수 선택 중 실수로 빗나갔을 때 선택이 통째로 날아가면 안 된다 (마야 동작).
+			// Pressing empty space while holding a modifier does nothing.
+			// A near miss during a multi-selection must not wipe the whole selection (Maya's behavior).
 			if (mode == SelectMode::Replace)
 				pm_selectedEntities.clear();
 			return;
 		}
 
-		// ⚠️ 클릭과 리드백 사이에 몇 프레임이 흐른다. 그 사이 지워진 엔티티일 수 있으므로
-		//    죽은 핸들을 선택에 넣지 않는다 (넣으면 Property editor가 그대로 터진다).
+		// WARNING: a few frames pass between the click and the readback. The entity may have been
+		//    deleted in between, so a dead handle never goes into the selection (it would blow up the Property editor).
 		Entity picked{ handle, pm_scene.get() };
 		if (!pm_scene->isValid(picked))
 			return;
@@ -230,8 +230,8 @@ namespace AppWMs {
 
 	void SceneProperties::pruneInvalidSelection()
 	{
-		// 서브트리 삭제(마야 방식) 때문에 내가 안 지운 엔티티도 사라질 수 있다 —
-		// 부모를 지우면 자손이 함께 죽는다. 죽은 핸들로 getComponent를 부르면 그대로 터진다.
+		// Because of subtree deletion (the Maya way), an entity I never deleted can disappear --
+		// deleting a parent kills its descendants. Calling getComponent on a dead handle blows up.
 		pm_selectedEntities.erase(
 			std::remove_if(pm_selectedEntities.begin(), pm_selectedEntities.end(),
 				[this](const Entity& e) { return !pm_scene->isValid(e); }),
@@ -241,37 +241,37 @@ namespace AppWMs {
 	void SceneProperties::onImGuiRender() {
 		ImGui::Begin("Scene properties");
 
-		// 그리기 전에 한 번 턴다. 지난 프레임의 삭제로 죽은 핸들이 남아 있을 수 있다.
+		// Swept once before drawing. Handles killed by last frame's deletion may still be in there.
 		pruneInvalidSelection();
 
 		// Check if the left mouse button is clicked in the window
 		bool clickedInsidePanel = ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
 
 		clickedOnEntity = false;
-		// ⚠️ view<TransformComponent> — **오브젝트만** 훑는다.
-		//    아웃라이너는 "씬에 놓인 물건"의 목록이다. 모디파이어처럼 위치가 없는
-		//    엔티티는 여기 뜨면 안 된다(블렌더도 모디파이어를 아웃라이너 항목으로
-		//    안 보여주고, 마야는 기본이 "Show DAG objects only"다). 그것들은
-		//    자기 탭에서 다뤄지고, 이 순회가 컴포넌트 구성만으로 알아서 걸러낸다.
-		//    덤으로 아래 set_vis_color가 VisComponent를 무조건 가정해도 안전해진다.
+		// WARNING: view<TransformComponent> -- it walks *objects only*.
+		//    The outliner is a list of "things placed in the scene". A position-less entity such as
+		//    a modifier must not show up here (Blender does not list modifiers as outliner items
+		//    either, and Maya defaults to "Show DAG objects only"). Those are handled in their own
+		//    tab, and this traversal filters them out by component composition alone.
+		//    As a bonus it makes set_vis_color below safe to assume a VisComponent unconditionally.
 		//
-		// 루트만 훑는다. 자식은 각 노드가 자기 안에서 재귀로 그린다 —
-		// 여기서 전부 훑으면 자식이 부모 밑에 한 번, 최상위에 또 한 번 나온다.
+		// Only the roots are walked. Each node recurses into its own children --
+		// walking everything here would show a child once under its parent and once at the top level.
 		for (auto e_id : pm_scene->pm_register.view<TransformComponent>()) {
 			Entity entity{ e_id, pm_scene.get() };
 			if (pm_scene->getParent(entity))
 				continue;
 			drawEntityNode(entity);
 		}
-		// 트리 아래 남은 빈 공간도 드롭 타겟이다 — 여기 놓으면 루트로 뺀다(unparent).
-		// 마야 아웃라이너와 같은 동작이고, 계층에서 빼는 데 단축키 말고 마우스 경로도 준다.
+		// The empty space left under the tree is a drop target too -- dropping here unparents to the root.
+		// The same behavior as Maya's outliner, and it gives a mouse path out of the hierarchy besides the shortcut.
 		const ImVec2 remaining = ImGui::GetContentRegionAvail();
 		if (remaining.x > 0.0f && remaining.y > 0.0f) {
 			ImGui::Dummy(remaining);
 			if (ImGui::BeginDragDropTarget()) {
 				if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("WMS_ENTITY")) {
 					pm_dragSource = *(const entt::entity*)p->Data;
-					pm_dropTarget = entt::null;      // 부모 없음 = 루트로
+					pm_dropTarget = entt::null;      // no parent = to the root
 					pm_hasPendingReparent = true;
 				}
 				ImGui::EndDragDropTarget();
@@ -287,11 +287,11 @@ namespace AppWMs {
 		}
 		ImGui::End();
 
-		// 트리 순회가 완전히 끝난 뒤에 계층을 바꾼다. 위 주석의 이유 그대로다.
+		// The hierarchy is changed only after the tree traversal is fully done, for the reason in the comment above.
 		applyPendingReparent();
 
 		ImGui::Begin("Property editor");
-		// 마지막에 고른 것의 속성을 보여준다 (마야 어트리뷰트 에디터와 같은 규칙).
+		// Shows the properties of the one picked last (the same rule as Maya's attribute editor).
 		if (Entity* active = get_activeEntity())
 			showPropertyComponents(*active);
 		ImGui::End();
@@ -305,18 +305,18 @@ namespace AppWMs {
 	}
 
 
-	// 탭 바 호스트.
+	// The tab bar host.
 	//
-	// ⚠️ 탭을 나눈 건 화면 정리가 아니라 **경계를 코드로 못박기 위해서**다.
-	//    Object(이 물건 자체)와 Modifier(이 물건에 거는 연산)는 서로 다른 종류의
-	//    엔티티를 다룬다 — 오브젝트는 위치가 있고 모디파이어는 없다.
-	//    한 패널에 섞어두면 "add component"로 모디파이어를 만드는 흐름이 생기고,
-	//    그 순간 둘의 구분이 무너진다. 지금 벽을 세워둔다.
+	// WARNING: the tabs are split not to tidy the screen but *to pin the boundary down in code*.
+	//    Object (the thing itself) and Modifier (the operations applied to it) handle different
+	//    kinds of entity -- an object has a position and a modifier does not.
+	//    Mixed into one panel, a flow appears where "add component" creates a modifier, and at
+	//    that moment the distinction collapses. The wall goes up now.
 	//
-	// Data 탭(형상 자체)은 Ref<Mesh>가 생길 때 붙는다 — 지금 만들면 담을 게 없다.
+	// The Data tab (the shape itself) arrives when Ref<Mesh> exists -- built now it would hold nothing.
 	void SceneProperties::showPropertyComponents( Entity& entity)
 	{
-		// 이름은 탭 밖에 둔다. 어느 탭을 보든 "무엇을 보고 있는지"는 항상 보여야 한다.
+		// The name sits outside the tabs. Whatever tab is open, "what am I looking at" must always show.
 		drawNameField(entity);
 
 		if (ImGui::BeginTabBar("##PropertyTabs")) {
@@ -350,14 +350,14 @@ namespace AppWMs {
 
 	void SceneProperties::drawModifierTab(Entity& entity)
 	{
-		// 🚧 아직 모디파이어 실물이 없다. 이 탭은 경계를 먼저 세워둔 자리다.
-		//    미러/스킨 등은 **위치 없는 엔티티**(Scene::createEntity)로 만들어져
-		//    이 목록에 뜬다. 오브젝트 엔티티에 컴포넌트로 얹지 않는다 —
-		//    그래야 종류별 연속 순회(view<MirrorComponent> 등)로 평가할 수 있다.
-		//    블렌더처럼 오브젝트마다 힙에 매달린 리스트를 타면 그 이점이 사라진다.
-		// ⚠️ 화면 문자열은 ASCII로 쓴다. 폰트가 Rubik(라틴 전용)이고 글리프 범위도
-		//    기본값이라 한글은 빈칸으로 나온다. 한글 UI를 하려면 한글 폰트 +
-		//    GetGlyphRangesKorean()을 imGuiLayer의 폰트 로드에 붙여야 한다. (미해결)
+		// There is no actual modifier yet. This tab is the boundary, put up first.
+		//    Mirror, skin and so on are created as *position-less entities* (Scene::createEntity)
+		//    and show up in this list. They are not stacked as components on an object entity --
+		//    that is what lets them be evaluated by contiguous per-kind traversal (view<MirrorComponent> etc.).
+		//    Going Blender's way, with a heap-linked list per object, would lose that benefit.
+		// WARNING: on-screen strings are written in ASCII. The font is Rubik (Latin only) and the
+		//    glyph range is the default, so Korean comes out blank. A Korean UI would need a Korean
+		//    font plus GetGlyphRangesKorean() added to imGuiLayer's font load. (unresolved)
 		ImGui::TextDisabled("No modifiers.");
 		ImGui::Spacing();
 		ImGui::TextWrapped("Mirror / Skin / Subdiv will stack here. (not implemented)");
@@ -368,8 +368,8 @@ namespace AppWMs {
 		DrawComponent<TransformComponent>("Transform", entity, [&](auto& transComp) {
 			DrawVec3("Translate", transComp.translate);
 
-			// 회전 모드 — 블렌더 방식. 고르는 순간 표현만 바뀌고 회전 자체는 유지된다
-			// (변환은 setRotationMode 안에서 일어난다).
+			// Rotation mode -- the Blender way. Picking one changes only the representation; the rotation is kept
+			// (the conversion happens inside setRotationMode).
 			const RotationMode mode = transComp.getRotationMode();
 			ImGui::Columns(2);
 			ImGui::Text("Rot Mode");
@@ -380,7 +380,7 @@ namespace AppWMs {
 				for (int i = 0; i <= (int)RotationMode::Quaternion; ++i) {
 					const RotationMode m = (RotationMode)i;
 					if (i == (int)RotationMode::Quaternion)
-						ImGui::Separator();   // 오일러 6종과 쿼터니언은 성격이 다르다
+						ImGui::Separator();   // the six Euler orders and the quaternion differ in character
 					if (ImGui::Selectable(rotationModeName(m), m == mode))
 						transComp.setRotationMode(m);
 				}
@@ -460,8 +460,8 @@ namespace AppWMs {
 		TagComponent& tagComp = entity.getComponent<TagComponent>();
 		const bool selected = isSelected(entity);
 
-		// 인라인 이름 편집 중 — 이 프레임엔 노드 대신 입력창이 그 자리를 차지한다.
-		// (그래서 편집 중인 노드의 자식은 잠깐 안 보인다. 기존 동작 그대로 둔다)
+		// Mid inline rename -- this frame an input box takes the node's place.
+		// (So the children of the node being renamed briefly disappear. The existing behavior is kept.)
 		if (selected && editMode)
 		{
 			ImGui::SetKeyboardFocusHere();
@@ -482,8 +482,8 @@ namespace AppWMs {
 			return;
 		}
 
-		// 자식 유무를 먼저 본다. Leaf를 안 주면 자식 없는 노드에도 펼침 화살표가
-		// 생겨서, 눌러도 아무것도 안 나오는 빈 화살표가 전부에 붙는다.
+		// Whether there are children is checked first. Without Leaf, a node with no children still
+		// gets an expand arrow, so everything ends up with an empty arrow that opens nothing.
 		const std::vector<entt::entity>* children = pm_scene->getChildren(entity);
 		const bool hasChildren = children && !children->empty();
 
@@ -497,16 +497,16 @@ namespace AppWMs {
 			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 		const bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tagComp.name.c_str());
-		// 라벨을 다 그린 직후에 되돌린다. 여기서 안 풀면 자식이 부모의 회색을 물려받아
-		// 부모만 숨겼는데 자식도 숨겨진 것처럼 보인다.
+		// Reverted right after the label is fully drawn. Left unpopped, children inherit the parent's
+		// grey and it looks as if the children were hidden when only the parent was.
 		ImGui::PopStyleColor();
 
-		// ⚠️ 클릭 판정은 TreeNodeEx **바로 뒤**여야 한다. 자식을 그린 뒤로 밀면
-		//    ImGui의 "마지막 아이템"이 자식으로 바뀌어 엉뚱한 노드가 선택된다.
+		// WARNING: the click test has to be *right after* TreeNodeEx. Pushed past the children,
+		//    ImGui's "last item" becomes a child and the wrong node gets selected.
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
 			clickedOnEntity = true;
-			// ⚠️ 예전엔 KeyCtrl 하나로 토글만 됐다. 이제 뷰포트와 같은 표를 쓴다 —
-			//    조합키가 뭔지는 여기 없고 keymap.yaml의 select 그룹이 정한다.
+			// WARNING: this used to be KeyCtrl alone, toggle only. Now it uses the same table as the
+			//    viewport -- which modifier that is is not here; the select group in keymap.yaml decides.
 			handleSelectionClick(entity, selectModeFromMods());
 		}
 		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -518,19 +518,19 @@ namespace AppWMs {
 			else { APP_WMS_CORE_WARN("Not editable the name."); }
 		}
 
-		// ── 드래그&드롭 ─────────────────────────────────────────────
-		// 이 두 블록은 TreeNodeEx가 만든 "마지막 아이템"에 붙는다. 자식을 그린 뒤로
-		// 밀면 자식 노드에 붙어버리므로 반드시 재귀보다 위에 있어야 한다.
+		// -- Drag & drop ----------------------------------------------
+		// These two blocks attach to the "last item" TreeNodeEx created. Pushed past the children
+		// they would attach to a child node, so they must stay above the recursion.
 		if (ImGui::BeginDragDropSource()) {
 			const entt::entity payload = entity.get_entityID();
 			ImGui::SetDragDropPayload("WMS_ENTITY", &payload, sizeof(payload));
-			ImGui::TextUnformatted(tagComp.name.c_str());   // 커서를 따라다니는 미리보기
+			ImGui::TextUnformatted(tagComp.name.c_str());   // the preview that follows the cursor
 			ImGui::EndDragDropSource();
 		}
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("WMS_ENTITY")) {
-				// ⚠️ 여기서 setParent를 부르면 안 된다 — 지금 이 함수가 재귀 중이고
-				//    부모/자식 vector가 갈아엎히면 순회하던 자리가 죽는다. 적어만 둔다.
+				// WARNING: setParent must not be called here -- this function is mid-recursion and if the
+				//    parent/child vectors get torn up, the position being iterated dies. Just record it.
 				pm_dragSource = *(const entt::entity*)p->Data;
 				pm_dropTarget = entity.get_entityID();
 				pm_hasPendingReparent = true;
@@ -539,8 +539,8 @@ namespace AppWMs {
 		}
 
 		if (opened && hasChildren) {
-			// ⚠️ 복사본으로 돈다. K-d의 드래그&드롭이 이 순회 도중에 계층을 바꾸면
-			//    원본 vector가 재할당되어 반복자가 그 자리에서 죽는다.
+			// WARNING: iterate over a copy. If K-d's drag & drop changes the hierarchy during this
+			//    traversal, the original vector is reallocated and the iterator dies right there.
 			const std::vector<entt::entity> snapshot = *children;
 			for (entt::entity child : snapshot) {
 				Entity childEntity{ child, pm_scene.get() };
@@ -555,16 +555,16 @@ namespace AppWMs {
 
 	bool SceneProperties::onKeyPressed(int keyCode)
 	{
-		// 선택이 없으면 이 패널이 처리할 게 없다 — 다른 데로 흘려보낸다.
+		// With no selection this panel has nothing to handle -- pass it on elsewhere.
 		if (pm_selectedEntities.empty())
 			return false;
 
 		if (KeyMap::isAction("edit.delete", keyCode))         { deleteSelected();          return true; }
 		if (KeyMap::isAction("visibility.hide", keyCode))     { setSelectedVisible(false); return true; }
 		if (KeyMap::isAction("visibility.show", keyCode))     { setSelectedVisible(true);  return true; }
-		// ⚠️ parent(P)와 unparent(Shift+P)가 같은 키를 쓴다. KeyMap::isAction이
-		//    조합키 **정확히 일치**를 요구하기 때문에 P가 Shift+P를 삼키지 않는다.
-		//    부분 일치였으면 위에 있는 parent가 항상 먼저 걸려 unparent가 죽는다.
+		// WARNING: parent (P) and unparent (Shift+P) use the same key. Because KeyMap::isAction
+		//    requires the modifiers to match *exactly*, P does not swallow Shift+P.
+		//    With a partial match the parent above would always win and unparent would be dead.
 		if (KeyMap::isAction("hierarchy.parent", keyCode))    { parentSelected();          return true; }
 		if (KeyMap::isAction("hierarchy.unparent", keyCode))  { unparentSelected();        return true; }
 		return false;
@@ -572,29 +572,29 @@ namespace AppWMs {
 
 	void SceneProperties::parentSelected()
 	{
-		// 마야 규약 — 자식들을 먼저 고르고 **부모를 마지막에** 고른 뒤 P.
-		// 그래서 활성(마지막) 항목이 부모고, 그 앞의 전부가 자식이 된다.
-		// 기즈모·Property editor가 붙는 대상과 같은 항목이라 예측이 어긋나지 않는다.
+		// The Maya convention -- pick the children first, pick *the parent last*, then P.
+		// So the active (last) item is the parent and everything before it becomes a child.
+		// It is the same item the gizmo and the Property editor attach to, so expectations hold.
 		if (pm_selectedEntities.size() < 2) {
-			APP_WMS_CORE_WARN("parent: 최소 2개를 골라야 한다 — 자식들을 먼저, 부모를 마지막에.");
+			APP_WMS_CORE_WARN("parent: at least two must be selected - children first, the parent last.");
 			return;
 		}
 
 		Entity parent = pm_selectedEntities.back();
-		// ⚠️ 복사본으로 돈다. setParent는 실패하면 목록을 안 건드리지만,
-		//    앞으로 선택을 손대게 되면 순회 중 변경이 바로 문제가 된다.
+		// WARNING: iterate over a copy. setParent does not touch the list when it fails, but
+		//    once the selection starts being modified, changing it mid-traversal becomes a problem.
 		const std::vector<Entity> children(pm_selectedEntities.begin(), pm_selectedEntities.end() - 1);
 		for (const Entity& child : children) {
 			if (!pm_scene->isValid(child))
 				continue;
-			// 순환(자손을 부모로)은 setParent가 거부하고 경고를 찍는다.
+			// A cycle (a descendant as the parent) is rejected by setParent, which logs a warning.
 			pm_scene->setParent(child, parent);
 		}
 	}
 
 	void SceneProperties::unparentSelected()
 	{
-		// 마야 unparent와 같다 — 월드 위치를 유지한 채 루트로 뺀다.
+		// Same as Maya's unparent -- pulled out to the root while keeping its world position.
 		for (Entity& e : pm_selectedEntities) {
 			if (pm_scene->isValid(e))
 				pm_scene->removeParent(e);
@@ -611,15 +611,15 @@ namespace AppWMs {
 		if (!pm_scene->isValid(source))
 			return;
 
-		// 끈 항목이 현재 선택에 들어 있으면 선택 전체를 옮긴다 (DCC 관례).
-		// 선택 밖의 것을 끌었으면 그 하나만 옮긴다.
+		// If the dragged item is in the current selection, the whole selection moves (DCC convention).
+		// If something outside the selection was dragged, only that one moves.
 		std::vector<Entity> movers;
 		if (isSelected(source))
 			movers = pm_selectedEntities;
 		else
 			movers.push_back(source);
 
-		// 빈 공간에 놓았으면 target이 null → 루트로 빼기(unparent)
+		// Dropped on empty space means target is null -> unparent to the root
 		Entity target = (pm_dropTarget == entt::null)
 			? Entity{}
 			: Entity{ pm_dropTarget, pm_scene.get() };
@@ -628,8 +628,8 @@ namespace AppWMs {
 			if (!pm_scene->isValid(m))
 				continue;
 			if (target && m == target)
-				continue;   // 자기 자신 위에 놓은 경우
-			// 순환은 setParent가 거부한다 — 여기서 또 검사하지 않는다.
+				continue;   // dropped onto itself
+			// A cycle is rejected by setParent -- it is not checked again here.
 			pm_scene->setParent(m, target);
 		}
 	}
@@ -644,14 +644,14 @@ namespace AppWMs {
 
 	void SceneProperties::deleteSelected()
 	{
-		// ⚠️ 삭제는 서브트리 통째다(마야 방식). 선택 목록에 부모와 자식이 같이 들어
-		//    있으면 부모를 지우는 순간 자식 핸들도 죽는다. 반복자를 들고 지우던 예전
-		//    방식은 그 죽은 핸들에 getComponent를 불러 터진다.
-		//    그래서 지우면서 도는 대신 "살릴 것"만 새로 모은다 — 죽은 건 자연히 빠진다.
+		// WARNING: deletion takes the whole subtree (the Maya way). If a parent and a child are both
+		//    in the selection list, deleting the parent kills the child handle too. The old approach
+		//    of erasing while holding an iterator calls getComponent on that dead handle and blows up.
+		//    So rather than erasing while iterating, only "what survives" is collected anew -- the dead fall out.
 		std::vector<Entity> keep;
 		for (Entity& e : pm_selectedEntities) {
 			if (!pm_scene->isValid(e))
-				continue;   // 앞선 서브트리 삭제에 휩쓸려 이미 사라졌다
+				continue;   // already gone, swept up by an earlier subtree deletion
 
 			if (e.hasComponent<CameraMatrixComponent>() &&
 				e.getComponent<CameraMatrixComponent>().defaultCam) {

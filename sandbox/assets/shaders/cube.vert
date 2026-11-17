@@ -4,12 +4,12 @@ layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec3 a_Color;
 
-// 🟢 첫 큐브는 push constant로 (UBO/디스크립터셋 없이 최소 경로)
-// ⚠️ frag의 Push 블록과 글자 그대로 같아야 한다 — 두 스테이지가 같은 걸 본다.
+// The first cube goes through push constants (the minimal path, no UBO/descriptor set)
+// WARNING: must be literally identical to the Push block in the frag -- both stages see the same thing.
 layout(push_constant) uniform Push {
     mat4 u_MVP;         //   0..127
     mat4 u_Model;
-    int  u_EntityID;    // 128..131   피킹용. frag만 읽는다
+    int  u_EntityID;    // 128..131   for picking. Only the frag reads it
 } pc;
 
 layout(location = 0) out vec3 v_Normal;

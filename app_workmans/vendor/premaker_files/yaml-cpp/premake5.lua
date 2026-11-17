@@ -1,18 +1,18 @@
 project "yaml-cpp"
     kind "StaticLib"
-    language "C++"          -- [중요] C가 아니라 C++로 변경해야 합니다.
+    language "C++"          -- [important] this has to be C++, not C.
     staticruntime "on"
     warnings "off"
     defines { "YAML_CPP_STATIC_DEFINE" }
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-    -- yaml-cpp 소스 파일 및 헤더 파일 경로 지정
+    -- Source and header file paths for yaml-cpp
     files
     {
-        "include/**.h",     -- include 폴더 내의 모든 헤더 파일 (재귀적)
-        "src/**.cpp",       -- src 폴더 내의 모든 cpp 파일 (재귀적)
-        "src/**.h"          -- src 폴더 내의 내부 헤더 파일
+        "include/**.h",     -- every header in the include folder (recursive)
+        "src/**.cpp",       -- every cpp in the src folder (recursive)
+        "src/**.h"          -- the internal headers in the src folder
     }
 	includedirs
 	{

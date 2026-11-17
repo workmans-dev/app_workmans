@@ -16,10 +16,10 @@ namespace AppWMs {
 
 	void Log::init() {
 #ifdef APP_WMS_PLATFORM_WINDOWS
-		// 소스는 /utf-8로 컴파일되어 로그 문자열이 UTF-8 바이트로 나가는데,
-		// 콘솔은 시스템 출력 코드페이지(한국어 환경 949)로 해석해서 한글이 깨진다.
-		// 콘솔 쪽을 UTF-8로 맞춘다. 파일로 리다이렉트할 때는 원래 문제가 없다
-		// (그쪽은 읽는 쪽이 UTF-8로 디코딩하면 된다).
+		// The sources compile with /utf-8, so log strings go out as UTF-8 bytes, while the console
+		// interprets them in the system output code page (949 in a Korean environment) and garbles them.
+		// This sets the console side to UTF-8. Redirecting to a file was never a problem
+		// (there the reader only needs to decode as UTF-8).
 		SetConsoleOutputCP(CP_UTF8);
 #endif
 		spdlog::set_pattern("%^[%T] %n: %v%$");

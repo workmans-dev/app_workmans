@@ -9,8 +9,8 @@ namespace AppWMs {
 	{
 		switch (Renderer::getRenderer()) {
 		case RendererAPI::SelectRenderer::None:
-			// ⚠️ return 필수 — ASSERTS는 Release에서 컴파일 아웃되므로
-			//    이게 없으면 None이 아래 Vulkan case로 흘러든다 (Hazel 물림 결함)
+			// WARNING: the return is required -- ASSERTS compiles out in Release, so
+			//    without it None falls through into the Vulkan case below (a defect inherited from Hazel)
 			APP_WMS_CORE_ASSERTS(false, "Renderer is None");
 			return nullptr;
 		case RendererAPI::SelectRenderer::Vulkan:

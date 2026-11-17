@@ -29,8 +29,8 @@ namespace AppWMs {
 	Win_Window::~Win_Window()
 	{
 		APP_WMS_PROFILE_FUNC();
-		// ⚠️ 서피스가 이 GLFW 창에서 만들어졌다 → 컨텍스트를 먼저 파괴해야
-		//    vkDestroySurfaceKHR가 살아있는 창을 대상으로 돈다.
+		// WARNING: the surface was created from this GLFW window -> the context has to be destroyed
+		//    first, so vkDestroySurfaceKHR runs against a window that is still alive.
 		delete m_context_ptr;
 		m_context_ptr = nullptr;
 		close();

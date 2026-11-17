@@ -1,7 +1,7 @@
 #pragma once
 #include "scene/scene.h"
 #include "scene/entity.h"
-// 직렬화는 모든 컴포넌트 타입을 알아야 한다 → 우산이 정직하다
+// Serialization has to know every component type -> the umbrella is honest here
 #include "scene/components/components.h"
 
 

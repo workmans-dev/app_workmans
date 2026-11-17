@@ -3,8 +3,8 @@
 #include "core/app_workmans.h"
 #include "panels/sceneProperty.h"
 
-// ④ C1 — 추상 Pipeline 계층을 두지 않기로 해서 sandbox가 벌칸 타입을 직접 소유한다.
-// 파이프라인이 2~3개(솔리드/와이어프레임)로 늘어 축이 드러나면 그때 추상화한다.
+// Decision #4, C1 -- no abstract Pipeline layer, so sandbox owns the Vulkan type directly.
+// Once pipelines grow to two or three (solid/wireframe) and the axis shows, abstract it then.
 #include "vulkan/vk_pipeline.h"
 
 
@@ -49,9 +49,9 @@ namespace AppWMs {
 		SceneCamera::CameraProjType type_=SceneCamera::CameraProjType::perspective;
 		int pm_manipulatorType = -1;
 
-		// ⚠️ 피킹은 클릭과 결과가 몇 프레임 떨어져 있다(GPU 리드백). 그래서 조합키를
-		//    **누른 순간**에 읽어 여기 들고 있다가, 결과가 익었을 때 그걸 쓴다.
-		//    결과가 온 시점에 다시 읽으면 이미 손을 뗀 뒤라 Shift가 사라져 있다.
+		// WARNING: with picking, the click and the result are a few frames apart (GPU readback). So
+		//    the modifier state is read *at the moment of the press* and held here, then used when
+		//    the result ripens. Reading it again when the result arrives would find Shift released.
 		SelectMode pm_pendingPickMode = SelectMode::Replace;
 
 	};

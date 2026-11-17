@@ -3,10 +3,10 @@
 
 namespace AppWMs {
 
-    // "이건 무엇인가" — 이름과 메타데이터.
-    // 표시 여부(VisComponent)는 렌더 속성이라 shading.h로 갔다.
+    // "What is this" -- the name and metadata.
+    // Visibility (VisComponent) is a render attribute, so it went to shading.h.
     struct TagComponent {
-        // 직렬화 키 = 컴파일 타임 상수. 인스턴스 크기 0바이트.
+        // Serialization key = a compile-time constant. Zero bytes per instance.
         static constexpr const char* TypeName() { return "TagComponent"; }
 
         std::string name;

@@ -5,7 +5,7 @@ workspace "app_workmans"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
--- Vulkan SDK 환경 변수 경로 가져오기
+-- Get the Vulkan SDK path from the environment variable
 vulkan_sdk = os.getenv("VULKAN_SDK")
 
 -- static lib 
@@ -17,9 +17,9 @@ includeDir["stb_image"] = "app_workmans/vendor/stb_image"
 includeDir["entt"] = "app_workmans/vendor/entt/include"
 includeDir["yaml_cpp"] = "app_workmans/vendor/yaml-cpp/include"
 includeDir["ImGuizmo"] = "app_workmans/vendor/ImGuizmo"
-includeDir["Vulkan"] = vulkan_sdk .. "/Include" -- Vulkan 헤더 경로 추가 (shaderc/ 헤더 포함)
+includeDir["Vulkan"] = vulkan_sdk .. "/Include" -- Vulkan header path (includes the shaderc/ headers)
 
--- lib 경로 / 파일 이름
+-- lib path / file names
 libraryDir = {}
 libraryDir["Vulkan"] = vulkan_sdk .. "/Lib"
 
@@ -62,13 +62,13 @@ project "app_workmans"
         "%{prj.name}/src/renderer/texture.cpp",
         "%{prj.name}/src/renderer/renderer2D.cpp",
         "%{prj.name}/src/renderer/uniformBuffer.cpp",
-        -- frameBuffer.cpp: 2-c에서 벌칸 팩토리 배선 완료 → 빌드 복귀
+        -- frameBuffer.cpp: the Vulkan factory wiring was finished in 2-c -> back in the build
         --
-        -- vk_shaderCompile.cpp: 런타임 GLSL 컴파일(shaderc) 경로.
-        -- SDK의 shaderc_combined.lib이 /MD(동적 릴리스 CRT)로만 배포되어
-        -- 우리 /MTd 설정과 링크 충돌한다. 셰이더는 compile_shaders.bat이
-        -- 빌드 시점에 굽고, 런타임은 .spv만 읽는다(vk_shaderModule.cpp).
-        -- 핫 리로드가 필요해지면 shaderc를 /MTd로 소스 빌드해서 되살릴 것.
+        -- vk_shaderCompile.cpp: the runtime GLSL compilation (shaderc) path.
+        -- The SDK's shaderc_combined.lib ships only as /MD (dynamic release CRT), which
+        -- collides with our /MTd setting at link time. Shaders are baked by
+        -- compile_shaders.bat at build time, and the runtime only reads .spv (vk_shaderModule.cpp).
+        -- If hot reload becomes necessary, build shaderc from source as /MTd and revive this.
         "%{prj.name}/src/vulkan/vk_shaderCompile.cpp"
     }
 
@@ -77,9 +77,9 @@ project "app_workmans"
         "_CRT_SECURE_NO_WARNINGS",
         "GLFW_INCLUDE_NONE",
         "YAML_CPP_STATIC_DEFINE",
-        -- 벌칸 NDC 깊이는 0~1 (OpenGL은 -1~1). 이게 없으면 glm::perspective가
-        -- -1~1 행렬을 만들어 깊이 절반이 클리핑된다.
-        -- 컴파일러 /D로 넣어야 glm 헤더보다 확실히 먼저 정의된다.
+        -- Vulkan NDC depth is 0..1 (OpenGL is -1..1). Without this, glm::perspective builds a
+        -- -1..1 matrix and half the depth gets clipped.
+        -- It has to go in via the compiler /D so it is defined before the glm headers for certain.
         "GLM_FORCE_DEPTH_ZERO_TO_ONE"
     }
 
@@ -97,7 +97,7 @@ project "app_workmans"
         "%{includeDir.Vulkan}"
     }
 
-    -- 라이브러리 파일(.lib)을 찾을 경로 추가 (Vulkan)
+    -- Add the path where library files (.lib) are found (Vulkan)
     libdirs
     {
         "%{libraryDir.Vulkan}"
@@ -109,7 +109,7 @@ project "app_workmans"
         "ImGui",
         "yaml-cpp",
         "%{library.Vulkan}"
-        -- ShaderC 링크 해제 — CRT 불일치(/MD vs /MTd). 위 removefiles 주석 참고.
+        -- ShaderC unlinked -- CRT mismatch (/MD vs /MTd). See the removefiles comment above.
     }
 
     filter "files:app_workmans/vendor/ImGuizmo/**.cpp"
@@ -148,10 +148,10 @@ project "sandbox"
     targetdir ("bin/"..outputdir.. "/%{prj.name}")
     objdir ("bin-int/"..outputdir.. "/%{prj.name}")
 
-    -- 🟢 sandbox도 PCH를 쓴다. includedirs에 app_workmans/src가 있어서
-    --    "pch.h"는 app_workmans/src/pch.h로 해석된다(헤더는 공유).
-    --    다만 .pch 바이너리는 프로젝트마다 따로 구워야 하므로
-    --    pchsource만 sandbox 자기 것을 가진다.
+    -- sandbox uses the PCH too. app_workmans/src is in includedirs, so
+    --    "pch.h" resolves to app_workmans/src/pch.h (the header is shared).
+    --    The .pch binary has to be baked per project, though, so only
+    --    pchsource is sandbox's own.
     pchheader "pch.h"
     pchsource "%{prj.name}/src/pch.cpp"
 
@@ -159,8 +159,8 @@ project "sandbox"
         "%{prj.name}/src/**.h",
         "%{prj.name}/src/**.cpp",
     }
-    -- 엔진과 동일하게 맞춰야 한다. 한쪽만 정의되면 같은 glm 타입이
-    -- 번역 단위마다 다른 깊이 규약으로 컴파일된다.
+    -- Has to match the engine. If only one side defines it, the same glm type compiles
+    -- with a different depth convention per translation unit.
     defines{
         "GLM_FORCE_DEPTH_ZERO_TO_ONE"
     }
@@ -170,15 +170,15 @@ project "sandbox"
         "app_workmans/vendor",
         "%{includeDir.glm}",
         "%{includeDir.entt}",
-        "%{includeDir.Vulkan}" -- 샌드박스도 벌칸 헤더 알 수 있도록 추가
+        "%{includeDir.Vulkan}" -- added so sandbox knows the Vulkan headers too
     }
 
     links{
         "app_workmans"
     }
 
-    -- 셰이더를 빌드마다 SPIR-V로 굽는다. 런타임은 .spv만 읽으므로
-    -- 셰이더를 고친 뒤 빌드하면 바로 반영된다.
+    -- Bakes the shaders to SPIR-V on every build. The runtime only reads .spv, so
+    -- editing a shader and building makes it take effect right away.
     prebuildcommands {
         'call "$(SolutionDir)compile_shaders.bat"'
     }

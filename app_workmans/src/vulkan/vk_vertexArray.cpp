@@ -4,9 +4,9 @@
 
 namespace AppWMs {
 
-	// ─────────────────────────────────────────────
-	// VulkanVertexInput — BufferLayout → 벌칸 정점 입력 기술자
-	// ─────────────────────────────────────────────
+	// ---------------------------------------------
+	// VulkanVertexInput -- BufferLayout -> Vulkan vertex input descriptors
+	// ---------------------------------------------
 	namespace VulkanVertexInput {
 
 		VkFormat ToVkFormat(ShaderDataType type) {
@@ -21,12 +21,12 @@ namespace AppWMs {
 			case ShaderDataType::Int4:   return VK_FORMAT_R32G32B32A32_SINT;
 			case ShaderDataType::Bool:   return VK_FORMAT_R8_UINT;
 
-			// Mat3/Mat4는 정점 속성으로 쓰면 location을 3~4개 점유한다.
-			// 어트리뷰트 1개 = location 1개인 현재 변환 규칙으로는 표현 불가.
-			// 인스턴싱 도입 시 별도 경로로 처리한다.
+			// Used as a vertex attribute, Mat3/Mat4 occupy 3-4 locations.
+			// The current conversion rule is one attribute = one location, so it cannot express that.
+			// Handle it on a separate path once instancing lands.
 			case ShaderDataType::Mat3:
 			case ShaderDataType::Mat4:
-				APP_WMS_CORE_ASSERTS(false, "Mat3/Mat4 정점 속성 미지원 (location 다중 점유)");
+				APP_WMS_CORE_ASSERTS(false, "Mat3/Mat4 vertex attributes unsupported (they occupy multiple locations)");
 				return VK_FORMAT_UNDEFINED;
 			}
 			APP_WMS_CORE_ASSERTS(false, "Unknown ShaderDataType!");
@@ -36,7 +36,7 @@ namespace AppWMs {
 		Description Build(const BufferLayout& layout, uint32_t binding) {
 			Description desc;
 
-			// stride는 BufferLayout이 calculateOffsetAndStride에서 이미 누적해둔 값
+			// stride is the value BufferLayout already accumulated in calculateOffsetAndStride
 			VkVertexInputBindingDescription bindingDesc{};
 			bindingDesc.binding = binding;
 			bindingDesc.stride = layout.getStride();
@@ -49,7 +49,7 @@ namespace AppWMs {
 				attr.location = location++;
 				attr.binding = binding;
 				attr.format = ToVkFormat(element.shaderDataType);
-				attr.offset = element.offset;   // 레이아웃이 계산해둔 바이트 오프셋
+				attr.offset = element.offset;   // byte offset the layout computed
 				desc.attributes.push_back(attr);
 			}
 			return desc;
@@ -62,7 +62,7 @@ namespace AppWMs {
 
 			m_VertexBuffers.push_back(vertexBuffer);
 
-		// 추상 포인터에서 실제 VkBuffer 핸들만 뽑아 캐시에 적재
+		// Pull just the real VkBuffer handle out of the abstract pointer and put it in the cache
 		auto vkVB = std::static_pointer_cast<VulkanVertexBuffer>(vertexBuffer);
 		m_VkBuffers.push_back(vkVB->getHandle());
 		m_Offsets.push_back(0);
@@ -79,7 +79,7 @@ namespace AppWMs {
 		}
 		if (m_IndexBuffer) {
 			auto vkIB = std::static_pointer_cast<VulkanIndexBuffer>(m_IndexBuffer);
-			// IndexBuffer::create가 uint32_t* 를 받으므로 UINT32 고정
+			// IndexBuffer::create takes uint32_t*, so UINT32 is fixed
 			vkCmdBindIndexBuffer(cmd, vkIB->getHandle(), 0, VK_INDEX_TYPE_UINT32);
 		}
 	}

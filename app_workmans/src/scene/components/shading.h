@@ -4,11 +4,11 @@
 
 namespace AppWMs {
 
-    // "어떻게 보이나" — 색·머티리얼과 표시 여부.
+    // "How does it look" -- color, material and visibility.
     //
-    // VisComponent가 identity가 아니라 여기 있는 이유: 이름·메타는 오브젝트가
-    // 무엇인지에 대한 정보고, 표시 여부는 그리느냐 마느냐의 렌더 판단이다.
-    // (잠금·선택가능처럼 아웃라이너 전용 속성이 늘면 그때 따로 뺀다)
+    // Why VisComponent lives here rather than in identity: name and metadata say what the
+    // object is, while visibility is the render decision of whether to draw it.
+    // (Once outliner-only attributes such as locked/selectable pile up, they get split out then.)
 
     struct VisComponent {
         static constexpr const char* TypeName() { return "VisComponent"; }

@@ -1,26 +1,26 @@
 # ─────────────────────────────────────────────────────────────
-#  WORKMANs 단축키 맵
+#  WORKMANs shortcut map
 #
-#  들여쓰기로 그룹을 만들고, 값에 키를 적는다. 코드가 찾는 이름은 그 둘을
-#  점으로 이은 것이다 —  gizmo: / translate: W  →  "gizmo.translate"
+#  Indentation makes a group, and the value holds the key. The name the code looks up is
+#  those two joined with a dot --  gizmo: / translate: W  ->  "gizmo.translate"
 #
-#  키 이름은 core/keyCode.h의 목록과 같다:
-#      A~Z,  D0~D9(숫자),  F1~F25,  KP0~KP9(넘패드),
+#  Key names match the list in core/keyCode.h:
+#      A-Z,  D0-D9 (digits),  F1-F25,  KP0-KP9 (numpad),
 #      Space Tab Enter Escape Backspace Delete Insert Home End PageUp PageDown
 #      Left Right Up Down,  LeftShift RightShift LeftControl LeftAlt ...
-#  마우스는 MouseLeft / MouseMiddle / MouseRight.
+#  Mouse is MouseLeft / MouseMiddle / MouseRight.
 #
-#  조합키는 +로 잇는다:  Ctrl+N,  Ctrl+Shift+S,  Shift+P
-#  쓸 수 있는 조합키: Ctrl(=Control), Shift, Alt, Super(=Win)
+#  Modifiers are joined with +:  Ctrl+N,  Ctrl+Shift+S,  Shift+P
+#  Usable modifiers: Ctrl(=Control), Shift, Alt, Super(=Win)
 #
-#  ⚠️ 조합키는 **정확히 일치**해야 걸린다. 그래서 P와 Shift+P가 서로를
-#     잡아먹지 않는다 — 부분 일치를 허용하면 P가 Shift+P를 먼저 삼킨다.
+#  WARNING: modifiers have to match *exactly* for a binding to fire. That is why P and
+#     Shift+P do not swallow each other -- a partial match would let P take Shift+P first.
 #
-#  이 파일이 없거나 문법이 깨지면 앱은 내장 기본값으로 뜨고 콘솔에 경고를 찍는다.
-#  (키맵 오타 하나로 편집기를 못 켜는 상황을 만들지 않는다)
+#  If this file is missing or its syntax is broken, the app starts with the built-in defaults
+#  and logs a warning to the console. (One keymap typo must not stop the editor opening.)
 # ─────────────────────────────────────────────────────────────
 
-# 기즈모 조작 모드 — 마야와 같은 배치 (Q 해제 / W 이동 / E 회전 / R 스케일)
+# Gizmo manipulation modes -- the same layout as Maya (Q release / W move / E rotate / R scale)
 gizmo:
   none:       Q
   translate:  W
@@ -35,18 +35,18 @@ file:
 app:
   exit:       Ctrl+Q
 
-# 선택 — 마야 규약. 아웃라이너와 뷰포트가 **같은 규칙**을 쓴다.
-#   조합키 없는 클릭 = 교체(기존 선택 해제)라서 여기 적지 않는다.
+# Selection -- the Maya convention. The outliner and the viewport use the *same rules*.
+#   A click with no modifier = replace (clears the existing selection), so it is not listed here.
 #
-# ⚠️ Alt는 일부러 안 쓴다 — 아래 camera.modifier가 LeftAlt라서
-#    Alt+좌클릭이 이미 tumble이다. 마야가 Alt를 선택에서 뺀 이유도 같다.
+# WARNING: Alt is deliberately unused -- camera.modifier below is LeftAlt, so
+#    Alt+left-click is already tumble. Maya left Alt out of selection for the same reason.
 select:
   toggle:     Shift+MouseLeft
   subtract:   Ctrl+MouseLeft
   add:        Ctrl+Shift+MouseLeft
 
-# 계층 — 마야 규약.
-# 자식들을 먼저 고르고 **부모를 마지막에** 고른 뒤 parent를 누른다.
+# Hierarchy -- the Maya convention.
+# Pick the children first, pick *the parent last*, then press parent.
 hierarchy:
   parent:     P
   unparent:   Shift+P
@@ -58,8 +58,8 @@ visibility:
   hide:       Ctrl+H
   show:       Shift+H
 
-# 카메라 — 마야 규약. modifier를 누른 채로 마우스 버튼을 끈다.
-#   tumble = 궤도 회전 / track = 평행 이동 / dolly = 전후 이동
+# Camera -- the Maya convention. Drag a mouse button while holding the modifier.
+#   tumble = orbit / track = pan / dolly = move in and out
 camera:
   modifier:   LeftAlt
   tumble:     MouseLeft

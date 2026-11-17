@@ -6,7 +6,7 @@
 namespace AppWMs {
     namespace VulkanSwapChain {
 
-        // 1. 하드웨어 스펙 및 모니터 지원 능력 싹 긁어오기
+        // 1. Pull in the hardware specs and everything the monitor supports
         SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
             SwapChainSupportDetails details;
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
@@ -27,7 +27,7 @@ namespace AppWMs {
             return details;
         }
 
-        // 2. 최적의 색상 선택 함수 내부 알맹이
+        // 2. Body of the best-surface-format picker
         VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
             for (const auto& availableFormat : availableFormats) {
                 if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -37,17 +37,17 @@ namespace AppWMs {
             return availableFormats[0];
         }
 
-        // 3. 최적의 동기화 방식(삼중 버퍼링 등) 선택 함수 내부 알맹이
+        // 3. Body of the present-mode picker (triple buffering and friends)
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
             for (const auto& availablePresentMode : availablePresentModes) {
                 if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
                     return availablePresentMode;
                 }
             }
-            return VK_PRESENT_MODE_FIFO_KHR; // 수직동기화 기본값 보장
+            return VK_PRESENT_MODE_FIFO_KHR; // guaranteed fallback: v-sync
         }
 
-        // 4. 해상도 크기 결정 함수 내부 알맹이
+        // 4. Body of the extent (resolution) decision
         VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window) {
             if (capabilities.currentExtent.width != UINT32_MAX) {
                 return capabilities.currentExtent;
@@ -62,7 +62,7 @@ namespace AppWMs {
             }
         }
 
-        // 4-1. 범용 이미지뷰 생성기
+        // 4-1. General-purpose image view creator
         VkImageView CreateImageView(VkDevice device, VkImage image,
             VkFormat format, VkImageAspectFlags aspectFlags) {
 
@@ -85,13 +85,13 @@ namespace AppWMs {
 
             VkImageView view = VK_NULL_HANDLE;
             if (vkCreateImageView(device, &viewInfo, nullptr, &view) != VK_SUCCESS) {
-                APP_WMS_CORE_ERROR("ImageView 생성 실패!");
+                APP_WMS_CORE_ERROR("Failed to create ImageView!");
                 return VK_NULL_HANDLE;
             }
             return view;
         }
 
-        // 4-2. 하드웨어 지원 포맷 탐색
+        // 4-2. Find a format the hardware supports
         VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,
             const std::vector<VkFormat>& candidates,
             VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -109,11 +109,11 @@ namespace AppWMs {
                     return format;
                 }
             }
-            APP_WMS_CORE_ERROR("지원되는 포맷을 찾지 못함!");
+            APP_WMS_CORE_ERROR("Could not find a supported format!");
             return VK_FORMAT_UNDEFINED;
         }
 
-        // 4-3. 깊이 포맷 우선순위: 정밀도 높은 순, 스텐실 없는 것 우선
+        // 4-3. Depth format priority: highest precision first, prefer one without stencil
         VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice) {
             return FindSupportedFormat(physicalDevice,
                 { VK_FORMAT_D32_SFLOAT,
@@ -123,7 +123,7 @@ namespace AppWMs {
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
         }
 
-        // 5. 메인 스왑체인 최종 조립 함수
+        // 5. Main swapchain assembly
         SwapChainBundle CreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device,
             VkSurfaceKHR surface, GLFWwindow* window, const VulkanInit::QueueFamilyIndices& indices) {
             SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(physicalDevice, surface);
@@ -180,7 +180,7 @@ namespace AppWMs {
             bundle.images.resize(actualImageCount);
             vkGetSwapchainImagesKHR(device, bundle.handle, &actualImageCount, bundle.images.data());
 
-            // 🟢 각 스왑체인 이미지를 컬러 뷰로 감싸기
+            // Wrap each swapchain image in a color view
             bundle.imageViews.resize(actualImageCount);
             for (uint32_t i = 0; i < actualImageCount; i++) {
                 bundle.imageViews[i] = CreateImageView(device, bundle.images[i],
@@ -193,15 +193,15 @@ namespace AppWMs {
             return bundle;
         }
 
-        // 6. 파괴 — 재생성과 종료가 공유한다
+        // 6. Destruction -- shared by recreate and shutdown
         void DestroySwapChain(VkDevice device, SwapChainBundle& bundle) {
             for (VkImageView view : bundle.imageViews) {
                 if (view != VK_NULL_HANDLE) vkDestroyImageView(device, view, nullptr);
             }
             bundle.imageViews.clear();
 
-            // images는 vkGetSwapchainImagesKHR로 "받아온" 드라이버 소유 핸들이라
-            // 개별 파괴하지 않는다. 스왑체인이 사라지면 같이 무효가 된다.
+            // images are driver-owned handles we merely "received" from vkGetSwapchainImagesKHR,
+            // so we never destroy them individually. They go invalid along with the swapchain.
             bundle.images.clear();
 
             if (bundle.handle != VK_NULL_HANDLE) {

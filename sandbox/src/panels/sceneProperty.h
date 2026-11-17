@@ -8,15 +8,15 @@
 
 namespace AppWMs {
 
-	// 선택 조작 방식 — 마야 규약. 아웃라이너와 뷰포트가 **같은 표**를 쓴다.
-	// 패널마다 규칙이 다르면 손이 못 외운다.
+	// How selection works -- the Maya convention. The outliner and the viewport use the *same table*.
+	// If the rules differ per panel, hands cannot learn them.
 	//
-	//   클릭            Replace   기존 선택을 버리고 이것만
-	//   Shift+클릭      Toggle    골라져 있으면 빼고, 아니면 넣는다
-	//   Ctrl+클릭       Subtract  빼기만
-	//   Ctrl+Shift+클릭 Add       넣기만
+	//   click              Replace   drop the existing selection and take only this
+	//   Shift+click        Toggle    remove it if selected, otherwise add it
+	//   Ctrl+click         Subtract  remove only
+	//   Ctrl+Shift+click   Add       add only
 	//
-	// ⚠️ 실제 조합키는 여기 없다 — keymap.yaml의 select 그룹이 정한다.
+	// WARNING: the actual modifiers are not here -- the select group in keymap.yaml decides them.
 	enum class SelectMode { Replace, Toggle, Add, Subtract };
 
 	class SceneProperties {
@@ -25,71 +25,71 @@ namespace AppWMs {
 		SceneProperties(const Ref<Scene>& scene);
 		void onImGuiRender();
 		void setScene(const Ref<Scene>& scene);
-		// Property editor 본체 — 이름 + 탭 바.
-		// 탭은 화면 정리가 아니라 **경계**다. Object(물건 자체) / Modifier(거는 연산)는
-		// 서로 다른 종류의 엔티티를 다루므로 섞이면 안 된다.
+		// The Property editor itself -- name + tab bar.
+		// The tabs are not screen tidying but a *boundary*. Object (the thing itself) and
+		// Modifier (the operations applied to it) handle different kinds of entity and must not mix.
 		void showPropertyComponents( Entity& entity);
-		// 한 노드를 그리고, 펼쳐져 있으면 자식까지 재귀로 그린다.
-		// ⚠️ 값으로 받는다 — 재귀가 자식 Entity를 임시로 만들기 때문에 참조로는 못 묶는다.
+		// Draws one node, and recurses into the children when it is expanded.
+		// WARNING: taken by value -- the recursion makes temporary child Entity objects, so a reference cannot bind.
 		void drawEntityNode(Entity entity);
 		void set_vis_color(Entity& entity);
 
-		// 키 이벤트 경로. 처리했으면 true.
+		// The key event path. Returns true when handled.
 		//
-		// ⚠️ 예전엔 ImGui::IsKeyPressed로 매 프레임 직접 물었다. 그러면 (1) 키가
-		//    keymap.yaml이 아니라 코드에 박히고, (2) ImGuiKey 열거형이라 우리
-		//    키코드 체계와 또 갈라진다. 이제 다른 단축키와 같은 이벤트 경로를 탄다.
+		// WARNING: this used to poll ImGui::IsKeyPressed directly every frame. That (1) bakes the
+		//    key into the code rather than keymap.yaml, and (2) uses the ImGuiKey enum, which
+		//    diverges from our key code scheme again. Now it takes the same event path as other shortcuts.
 		bool onKeyPressed(int keyCode);
 
-		// ⚠️ set이 아니라 vector다 — **선택한 순서가 정보**이기 때문이다.
-		//    마야 규약: 자식들을 먼저 고르고 부모를 마지막에 고른 뒤 P.
-		//    std::set은 엔티티 id 순으로 정렬해버려서 그 순서를 통째로 버린다.
-		//    (그래서 EntityComparator는 이제 여기서 안 쓴다)
+		// WARNING: a vector, not a set -- because *the selection order is information*.
+		//    The Maya convention: pick the children first, pick the parent last, then P.
+		//    std::set would sort by entity id and throw that order away wholesale.
+		//    (which is why EntityComparator is no longer used here)
 		std::vector<Entity>& get_selectedEntities() { return pm_selectedEntities; }
 
-		// 선택된 것 중 **활성** 오브젝트 = 마지막에 고른 것.
-		// 마야에서 매니퓰레이터와 어트리뷰트 에디터가 붙는 대상이 이것이고,
-		// parent의 부모가 되는 대상도 이것이다. 하나로 통일해야 헷갈리지 않는다.
+		// The *active* object among the selected ones = the one picked last.
+		// In Maya this is what the manipulator and the attribute editor attach to, and
+		// it is also what parent makes the parent. Keeping it to one avoids confusion.
 		Entity* get_activeEntity();
 
-		// 지금 눌려 있는 조합키가 어떤 선택 방식인가. keymap.yaml의 select 그룹을
-		// 조회하므로 키를 바꾸면 아웃라이너와 뷰포트가 **같이** 바뀐다.
+		// Which selection mode the currently held modifiers mean. It queries the select group in
+		// keymap.yaml, so changing a key changes the outliner and the viewport *together*.
 		static SelectMode selectModeFromMods();
 
-		// 🟢 뷰포트 피킹(P-b) 결과를 선택에 반영한다.
-		//    handle이 entt::null이면 빈 곳을 클릭한 것이다.
+		// Applies the viewport picking (P-b) result to the selection.
+		//    A handle of entt::null means empty space was clicked.
 		//
-		// ⚠️ mode는 **클릭한 순간**의 것을 넘겨야 한다. 리드백이 몇 프레임 뒤에
-		//    오므로 그때 다시 조합키를 읽으면 이미 손을 뗀 뒤일 수 있다.
+		// WARNING: mode has to be the one from *the moment of the click*. The readback arrives a few
+		//    frames later, so reading the modifiers again then may find them already released.
 		void applyPickSelection(entt::entity handle, SelectMode mode);
 
 	private:
-		// 선택 조작 — 클릭 처리부가 트리 순회 안으로 들어가도(K-b) 그대로 재사용된다.
+		// Selection handling -- reused as is even when the click handler moves inside the tree traversal (K-b).
 		void drawNameField(Entity& entity);
-		void drawObjectTab(Entity& entity);     // 이 물건 자체 — Transform / Visibility / Camera / Material
-		void drawModifierTab(Entity& entity);   // 이 물건에 거는 연산 — Mirror / Skin ... (🚧 미구현)
+		void drawObjectTab(Entity& entity);     // the thing itself -- Transform / Visibility / Camera / Material
+		void drawModifierTab(Entity& entity);   // operations applied to it -- Mirror / Skin ... (not implemented)
 
 		bool isSelected(const Entity& e) const;
 		void handleSelectionClick(const Entity& e, SelectMode mode);
-		// 삭제로 사라진 핸들을 선택 목록에서 걷어낸다.
+		// Sweeps handles that vanished through deletion out of the selection list.
 		void pruneInvalidSelection();
 		void deleteSelected();
 		void setSelectedVisible(bool visible);
 
-		// 계층 조작 — 마야 규약(자식들 먼저, 부모를 마지막에 고른 뒤 P)
+		// Hierarchy operations -- the Maya convention (children first, parent last, then P)
 		void parentSelected();
 		void unparentSelected();
 
-		// ⚠️ 드롭을 그 자리에서 처리하면 안 된다. drawEntityNode가 재귀 중이고,
-		//    setParent가 부모/자식 vector를 갈아엎으면 순회하던 자리가 그대로 죽는다.
-		//    요청만 적어두고 트리를 다 그린 뒤에 적용한다.
+		// WARNING: a drop must not be handled on the spot. drawEntityNode is mid-recursion, and if
+		//    setParent tears up the parent/child vectors, the position being iterated dies right there.
+		//    Only the request is recorded, and it is applied after the whole tree is drawn.
 		void applyPendingReparent();
 
 	private:
 		Ref<Scene> pm_scene;
 		std::vector<Entity> pm_selectedEntities;
 
-		// 지연 처리용 드롭 요청. target == entt::null 이면 루트로 빼기(unparent).
+		// A deferred drop request. target == entt::null means unparent to the root.
 		bool         pm_hasPendingReparent = false;
 		entt::entity pm_dragSource{ entt::null };
 		entt::entity pm_dropTarget{ entt::null };

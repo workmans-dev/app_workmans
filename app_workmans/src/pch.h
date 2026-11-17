@@ -17,8 +17,8 @@
 #include <set>
 #include <cstring>
 
-// 🟢 92,967줄. scene.h가 끌어오므로 이걸 포함하는 .cpp마다 매번 다시 파싱됐다.
-//    PCH에 넣으면 프로젝트당 한 번만 판다.
+// 92,967 lines. scene.h pulls it in, so it was re-parsed for every .cpp that includes this.
+//    Putting it in the PCH digs through it once per project.
 #include "entt.hpp"
 
 #include "core/log.h"

@@ -9,28 +9,28 @@
 namespace AppWMs {
     namespace VulkanInit {
         VkInstance CreateInstance() {
-            // 1. 애플리케이션 정보 설정 (선택 사항이지만 기본적으로 채우는 서류)
+            // 1. Application info (optional, but we fill it in as a matter of course)
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
             appInfo.pApplicationName = "WORKMANs";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "WMs Engine";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.apiVersion = VK_API_VERSION_1_3; // 벌칸 1.3 버전 사용 사양
+            appInfo.apiVersion = VK_API_VERSION_1_3; // we target Vulkan 1.3
 
-            // 2. 최종 인스턴스 생성 정보 컨테이너 준비
+            // 2. Prepare the instance create-info container
             VkInstanceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
 
 
 
-            // 3. GLFW 필수 확장(VK_KHR_surface, VK_KHR_win32_surface) 수집
+            // 3. Collect the extensions GLFW requires (VK_KHR_surface, VK_KHR_win32_surface)
             uint32_t glfwExtensionCount = 0;
             const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
             std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-            // 🟢 디버그 빌드에서만 validation layer 활성화
+            // Enable the validation layer in debug builds only
             std::vector<const char*> layers;
 #ifdef APP_WMS_DEBUG
             {
@@ -50,7 +50,7 @@ namespace AppWMs {
                     APP_WMS_CORE_INFO("Validation layer enabled");
                 }
                 else {
-                    APP_WMS_CORE_WARN("VK_LAYER_KHRONOS_validation not found - SDK layer install 확인");
+                    APP_WMS_CORE_WARN("VK_LAYER_KHRONOS_validation not found - check the SDK layer install");
                 }
             }
 #endif
@@ -62,10 +62,10 @@ namespace AppWMs {
 
 
 
-            // 4. 실제 인스턴스 생성 및 하드웨어 컨텍스트 확보
+            // 4. Create the instance and secure the hardware context
             VkInstance instance;
             if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-                // 형님 프로젝트의 로그 매크로나 std::cerr을 사용해 에러를 뿜게 합니다.
+                // Report the error through the project log macros or std::cerr.
                 APP_WMS_CORE_ERROR("failed to create Vulkan instance!");
                 return VK_NULL_HANDLE;
             }
@@ -74,9 +74,9 @@ namespace AppWMs {
 
         VkSurfaceKHR CreateSurface(VkInstance instance, GLFWwindow* window) {
             VkSurfaceKHR surface;
-            // GLFW가 OS별 서피스 생성 복잡도를 완전히 대행해 줍니다.
+            // GLFW handles all the per-OS surface creation complexity for us.
             if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-                // 형님 프로젝트의 로그 시스템에 맞춰 에러를 뿌려줍니다.
+                // Report the error through the project log system.
                 APP_WMS_CORE_ERROR("failed to create window surface!");
                 return VK_NULL_HANDLE;
             }
@@ -98,16 +98,16 @@ namespace AppWMs {
                 vkGetPhysicalDeviceProperties(device, &properties);
 
                 int currentScore = 0;
-                // 🟢 가점제 방식: 하드웨어 타입이 외장 그래픽(RTX 등)이면 압도적인 점수를 부여!
+                // Scoring: a discrete GPU (RTX and the like) gets an overwhelming score
                 if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                     currentScore += 10000;
                 }
-                // 내장 그래픽(Intel Iris Xe 등)은 기본 점수만 부여
+                // Integrated graphics (Intel Iris Xe and the like) only gets the base score
                 else if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
                     currentScore += 1000;
                 }
 
-                // 가장 점수가 높은 (가장 성능이 좋은) GPU를 최종 선택
+                // Pick the highest-scoring (fastest) GPU
                 if (currentScore > maxScore) {
                     maxScore = currentScore;
                     bestDevice = device;
@@ -117,24 +117,24 @@ namespace AppWMs {
             return bestDevice;
         }
   
-        // 🟢 내부적으로만 쓰일 통로 검색 자동화 헬퍼 함수
+        // Internal-only helper that automates the queue family search
         QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
             QueueFamilyIndices indices;
 
-            // 1. 이 GPU가 가진 물리적인 통로(큐 패밀리) 개수 조회
+            // 1. Query how many physical queue families this GPU has
             uint32_t queueFamilyCount = 0;
             vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
             std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
             vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-            // 2. graphics / present 통로 탐색
+            // 2. Look for the graphics / present families
             for (uint32_t i = 0; i < queueFamilyCount; i++) {
                 const auto& flags = queueFamilies[i].queueFlags;
-                // 그래픽 연산이 가능한 통로인가?
+                // Can this family do graphics work?
                 if (flags & VK_QUEUE_GRAPHICS_BIT) {
                     indices.graphicsFamily = i;
                 }
-                // ⭐️ 이 통로가 우리가 만든 도화지(surface)에 그림을 던질 수 있는가?
+                // Can this family present to the surface we created?
                 VkBool32 presentSupport = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
                 if (presentSupport) {
@@ -142,19 +142,19 @@ namespace AppWMs {
                 }
             }
 
-            // 3. ⭐️ 전용 transfer 통로 우선 탐색:
-            //    "TRANSFER 비트는 있으면서 GRAPHICS 비트는 없는" 순수 DMA 전용 패밀리를 찾는다.
-            //    (모든 graphics 큐는 암묵적으로 transfer 가능하지만, 별도 DMA 엔진을 쓰려면 분리 패밀리가 필요)
+            // 3. Prefer a dedicated transfer family:
+            //    look for a pure DMA family that has the TRANSFER bit but not the GRAPHICS bit.
+            //    (every graphics queue can implicitly transfer, but a separate DMA engine needs its own family)
             for (uint32_t i = 0; i < queueFamilyCount; i++) {
                 const auto& flags = queueFamilies[i].queueFlags;
                 if ((flags & VK_QUEUE_TRANSFER_BIT) &&
                     !(flags & VK_QUEUE_GRAPHICS_BIT)) {
                     indices.transferFamily = i;
-                    break; // 전용 통로 발견 → 확정
+                    break; // dedicated family found -> settled
                 }
             }
 
-            // 4. 전용 전송 통로가 없으면 graphics 통로로 폴백 (같은 패밀리 → 나중에 배리어 생략됨)
+            // 4. With no dedicated transfer family, fall back to graphics (same family -> barriers skipped later)
             if (!indices.transferFamily.has_value()) {
                 indices.transferFamily = indices.graphicsFamily;
             }
@@ -167,7 +167,7 @@ namespace AppWMs {
         VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, 
             const QueueFamilyIndices& indices, const EngineGraphicsSettings& settings) {
 
-            // 가동 서류에 첨부할 큐 생성 정보 배열 준비
+            // Build the queue create-info array to attach to the device create info
             std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
             std::set<uint32_t> uniqueQueueFamilies = {
@@ -186,7 +186,7 @@ namespace AppWMs {
                 queueCreateInfos.push_back(queueCreateInfo);
             }
 
-            // 2. 하드웨어 스펙 조회 및 유저 가변 세팅 매핑 (기존과 동일)
+            // 2. Query hardware features and map the user-tunable settings (unchanged)
             VkPhysicalDeviceFeatures supportedFeatures;
             vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
@@ -194,16 +194,16 @@ namespace AppWMs {
             if (supportedFeatures.geometryShader && settings.enableGeometryShader) deviceFeatures.geometryShader = VK_TRUE;
             if (supportedFeatures.wideLines && settings.enableWideLines) deviceFeatures.wideLines = VK_TRUE;
 
-            // 3. 최종 주문서 조립
+            // 3. Assemble the final create info
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
             createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-            createInfo.pQueueCreateInfos = queueCreateInfos.data(); // 조립된 일꾼 세트들 전달
+            createInfo.pQueueCreateInfos = queueCreateInfos.data(); // hand over the assembled queue set
             createInfo.pEnabledFeatures = &deviceFeatures;
 
-            // ⭐️ 중요: 스왑체인을 쓰기 위해서는 논리 장치를 켤 때 "나 화면 출력 확장 기능 쓸 거임"이라고 명시해야 합니다.
+            // IMPORTANT: to use a swapchain, the logical device must declare the presentation extension at creation time.
             const std::vector<const char*> deviceExtensions = {
-                VK_KHR_SWAPCHAIN_EXTENSION_NAME // "VK_KHR_swapchain" 매크로 문자열입니다.
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME // the macro for the "VK_KHR_swapchain" string
             };
             createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
             createInfo.ppEnabledExtensionNames = deviceExtensions.data();

@@ -5,40 +5,40 @@
 
 namespace AppWMs {
 
-    // 렌더타겟에 붙는 이미지 한 장의 용도.
+    // What a single image attached to a render target is for.
     enum class AttachmentFormat {
         None = 0,
-        RGBA8,          // 색
-        // 🟢 P-a — 피킹용 엔티티 id 버퍼. 색이 아니라 데이터라 ImGui가 샘플링하지
-        //    않는다. 빈 곳은 -1로 clear되고, 그 비트패턴이 entt::null과 같다.
+        RGBA8,          // color
+        // P-a -- the entity id buffer for picking. It is data, not color, so ImGui does not
+        //    sample it. Empty areas clear to -1, whose bit pattern equals entt::null.
         R32SINT,
-        DEPTHSTENCIL8,  // 깊이(+스텐실)
+        DEPTHSTENCIL8,  // depth (+ stencil)
         Depth = DEPTHSTENCIL8
     };
 
     struct RenderTargetSpec {
         uint32_t w = 0, h = 0;
         uint32_t samples = 1;
-        // { RGBA8, Depth } 처럼 나열한다. 나열 순서가 곧 어태치먼트 슬롯 번호.
+        // Listed like { RGBA8, Depth }. The order listed is the attachment slot number.
         std::vector<AttachmentFormat> attachments;
     };
 
-    // "어디에 그리나" — 화면이 아닌 자체 이미지에 그리는 대상.
+    // "Where do we draw" -- a target that draws into its own images rather than the screen.
     //
-    // ⚠️ 예전 이름은 FrameBuffer였다. OpenGL FBO 시절 용어라 역할과 안 맞았다:
-    //    VkFramebuffer는 이 클래스가 가진 부품 하나일 뿐이고, 픽셀을 담지도 않는다.
-    //    이 클래스의 정체는 "그려질 이미지 + 그 결과를 텍스처로 읽어가는 경로"를
-    //    묶어서 소유하는 렌더 대상이다. D3D/Unity/UE가 쓰는 render target과 같은 개념.
+    // WARNING: the old name was FrameBuffer. That was OpenGL FBO terminology and did not match
+    //    the role: VkFramebuffer is just one part this class holds, and it holds no pixels.
+    //    What this class actually is: a render target that owns, together, the images drawn into
+    //    and the path for reading the result back as a texture. The concept D3D/Unity/UE call a render target.
     class RenderTarget {
     public:
         static Ref<RenderTarget> create(const RenderTargetSpec& spec);
 
         virtual ~RenderTarget() = default;
 
-        // ⚠️ bind/unbind가 아니다. 벌칸엔 "현재 바인딩된 대상"이라는 전역 상태가 없다.
-        //    실제로 하는 일은 커맨드버퍼에 렌더패스를 열고 닫는 것이고,
-        //    명령은 이 객체가 아니라 커맨드버퍼에 쌓인다.
-        //    커맨드버퍼는 구현체가 컨텍스트에서 빌려 쓰므로 인자가 없다.
+        // WARNING: not bind/unbind. Vulkan has no global state called "the currently bound target".
+        //    What this actually does is open and close a render pass on the command buffer, and
+        //    the commands pile up in the command buffer, not in this object.
+        //    The implementation borrows the command buffer from the context, so there is no argument.
         virtual void beginPass() = 0;
         virtual void endPass() = 0;
 
@@ -46,22 +46,22 @@ namespace AppWMs {
 
         virtual const RenderTargetSpec& get_spec() const = 0;
 
-        // ImGui::Image()에 그대로 넘길 텍스처 핸들.
-        // 벌칸은 VkDescriptorSet(64비트) → ImTextureID(ImU64)와 폭을 맞춘다.
+        // The texture handle passed straight to ImGui::Image().
+        // On Vulkan that is a VkDescriptorSet (64-bit) -> matched in width to ImTextureID (ImU64).
         virtual uint64_t getColorTextureID(int index = 0) const = 0;
 
-        // 🟢 P-b — 정수 어태치먼트(R32_SINT)에서 픽셀 한 개를 CPU로 읽어온다.
+        // P-b -- reads a single pixel from an integer attachment (R32_SINT) back to the CPU.
         //
-        // ⚠️ **결과가 즉시 나오지 않는다.** 요청과 수확이 갈라진 건 취향이 아니라
-        //    강제다: 방금 그린 픽셀을 지금 읽으려면 GPU가 그 프레임을 끝낼 때까지
-        //    기다려야 하고, 그러면 파이프라인이 비어 프레임이 선다.
-        //    그래서 복사만 예약해두고 몇 프레임 뒤에 꺼낸다.
+        // WARNING: *the result is not immediate.* Splitting the request from the harvest is not a
+        //    preference but a constraint: reading a pixel just drawn would mean waiting for the GPU
+        //    to finish that frame, which drains the pipeline and stalls the frame.
+        //    So only the copy is scheduled, and it is picked up a few frames later.
         //
-        // (x, y)는 어태치먼트 좌상단 기준 텍셀 좌표다. 범위를 벗어나면 무시된다.
+        // (x, y) are texel coordinates from the attachment's top-left. Out-of-range is ignored.
         virtual void requestPixelRead(int attachmentIndex, uint32_t x, uint32_t y) = 0;
 
-        // 준비된 값이 있으면 꺼내고 true. 없으면 건드리지 않고 false.
-        // 한 번 꺼내면 사라진다 — 매 프레임 불러도 같은 값이 반복되지 않는다.
+        // If a value is ready it is taken out and true returned. Otherwise nothing is touched and false.
+        // Taking it once consumes it -- calling every frame does not repeat the same value.
         virtual bool pollPixelRead(int32_t& outValue) = 0;
     };
 }
