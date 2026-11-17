@@ -71,14 +71,18 @@ premake5 is included under `vendor/bin/premaker`.
    git clone --recurse-submodules https://github.com/workmans-dev/app_workmans.git
    ```
 
-2. Copy the premake files into the submodules — they are not part of the
-   upstream repositories, so they have to be placed by hand:
+2. Run `setup_vendor.bat` once.
 
-   ```
-   app_workmans/vendor/premaker_files/GLFW/premake5.lua     ->  app_workmans/vendor/GLFW/
-   app_workmans/vendor/premaker_files/imgui/premake5.lua    ->  app_workmans/vendor/imgui/
-   app_workmans/vendor/premaker_files/yaml-cpp/premake5.lua ->  app_workmans/vendor/yaml-cpp/
-   ```
+   GLFW, imgui and yaml-cpp are built as part of this solution, so each needs a
+   `premake5.lua` — but they are submodules, and a file added inside a submodule
+   would have to be committed to someone else's repository. So the originals
+   live in `app_workmans/vendor/premaker_files/` and are copied in at setup time.
+
+   The script also registers those copies, the generated `.vcxproj` files and the
+   build output in each submodule's `.git/info/exclude`. That file is local to the
+   clone and is not tracked, so the submodules stay clean and `git pull` inside
+   them never conflicts. (Putting the same rules in a submodule's `.gitignore`
+   would do the opposite — that file *is* tracked upstream.)
 
 3. Run `gen_project_win.bat` to generate `app_workmans.sln`.
 
