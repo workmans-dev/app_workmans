@@ -23,8 +23,11 @@ project "ImGui"
 		"backends/imgui_impl_vulkan.cpp"
 	}
 
-		includedirs
+	includedirs
 	{
+		-- The imgui root. backends/imgui_impl_vulkan.cpp does #include "imgui.h",
+		-- which does not resolve from inside backends/ without this.
+		".",
 		"%{includeDir.Vulkan}"
 	}
 
