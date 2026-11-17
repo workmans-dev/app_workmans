@@ -1,0 +1,17 @@
+# Language detection (GitHub linguist)
+#
+# Without this the repository is reported as C. Two things cause that:
+# third-party single-header libraries dominate the byte count, and linguist
+# guesses .h files as C unless told otherwise.
+
+# Our headers are C++.
+*.h linguist-language=C++
+
+# Third-party code that lives in the tree but is not ours. Marking it vendored
+# keeps it out of the language stats and collapses it in diffs.
+app_workmans/vendor/** linguist-vendored
+app_workmans/src/vulkan/vk_mem_alloc.h linguist-vendored
+vendor/** linguist-vendored
+
+# Generated at build time from the GLSL sources.
+*.spv linguist-generated
