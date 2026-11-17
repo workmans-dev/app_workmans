@@ -54,6 +54,9 @@ Thumbs.db
 *.ini
 *.vcxproj
 *.vcxproj.filters
+*.vcxproj.user
+# premake generates the workspace too (gen_project_win.bat)
+*.sln
 
 
 bin/
